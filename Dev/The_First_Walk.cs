@@ -18,6 +18,7 @@ namespace KDrawScript.Dev
             accessory.Method.RemoveDraw(".*");
         }
 
+        #region 1
         // Boss 1: Prishe of the Distant Chains
         [ScriptMethod(name: "Banishga", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40935"])]
         public void Banishga(Event @event, ScriptAccessory accessory)
@@ -30,13 +31,13 @@ namespace KDrawScript.Dev
         {
             accessory.Method.TextInfo("AOE", duration: 2000, true);
         }
-
+        /*
         [ScriptMethod(name: "Banish Storm", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40946"])]
         public void BanishStorm(Event @event, ScriptAccessory accessory)
         {
             accessory.Method.TextInfo("AOE", duration: 2000, true);
         }
-
+        */
         [ScriptMethod(name: "Knuckle Sandwich", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4094[01]|40939)$"])]
         public void KnuckleSandwich(Event @event, ScriptAccessory accessory)
         {
@@ -62,7 +63,7 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
             accessory.Method.TextInfo("Out -> In", duration: 2000, true);
-            /*
+
             var dp2 = accessory.Data.GetDefaultDrawProperties();
             dp2.Name = "Knuckle Sandwich - In";
             dp2.Radian = float.Pi * 2;
@@ -70,6 +71,7 @@ namespace KDrawScript.Dev
             dp2.Color = accessory.Data.DefaultDangerColor;
             dp2.Owner = sid;
             dp2.DestoryAt = 1000;
+            dp2.Delay = 12500;
 
             switch (@event["ActionId"])
             {
@@ -85,7 +87,6 @@ namespace KDrawScript.Dev
             }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp2);
-            */
         }
 
         [ScriptMethod(name: "Nullifying Dropkick", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40957"])]
@@ -172,7 +173,7 @@ namespace KDrawScript.Dev
                     dp.Scale = new(1.5f, 25);
                     break;
                 case 3:
-                    dp.Scale = new(1.5f, 35);
+                    dp.Scale = new(1.5f, 38);
                     break;
             }
 
@@ -199,8 +200,280 @@ namespace KDrawScript.Dev
         {
             accessory.Method.TextInfo("Alliance Stack", duration: 2000, true);
         }
+        #endregion
 
-        // Utility
+        #region 2
+        // Boss 2: Fafnir the Forgotten
+
+        [ScriptMethod(name: "Dark Matter Blast", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40854"])]
+        public void DarkMatterBlast(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("AOE", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Offensive Posture", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4081[146])$"])]
+        public void OffensivePosture(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            // 40811 Tail 2/3 40816 Chariot 40814 Donut
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+
+            dp.Name = "Offensive Posture";
+            dp.Owner = sid;
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.DestoryAt = 10000;
+
+            switch (@event["ActionId"])
+            {
+                case "40811":
+                    if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
+                    dp.Rotation = rot;
+                    dp.FixRotation = true;
+                    dp.Radian = float.Pi * 0.50f;
+                    dp.Scale = new(40);
+                    dp.Color = accessory.Data.DefaultSafeColor;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+                    break;
+                case "40814":
+                    dp.Radian = float.Pi * 2;
+                    dp.Scale = new(35);
+                    dp.InnerScale = new(17);
+
+                    accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
+                    accessory.Method.TextInfo("To Front", duration: 2000, true);
+                    break;
+                case "40816":
+                    dp.Scale = new(24);
+
+                    accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+                    break;
+            }
+
+        }
+
+        [ScriptMethod(name: "Baleful Breath", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:39922"])]
+        public void BalefulBreath(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("Alliance Line Stack", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Hurricane Wing", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40817"])]
+        public void HurricaneWing(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("Multiple AOE", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Absolute Terror", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40846"])]
+        public void AbsoluteTerror(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Absolute Terror";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(20, 70);
+            dp.Position = new(-500, -500, 570);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Winged Terror", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40848"])]
+        public void WingedTerror(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Winged Terror - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(25, 70);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Horrid Roar", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40850"])]
+        public void HorridRoar(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Horrid Roar - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 4000;
+            dp.Scale = new(4);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        #endregion
+
+        #region 3
+        // Boss 3: Ark Angel
+        [ScriptMethod(name: "The Decisive Battle", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:regex:^(4105[789])$"])]
+        public void TheDecisiveBattle(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["TargetId"], out var tid)) return;
+            if (tid != accessory.Data.Me) return;
+
+            switch (@event["ActionId"])
+            {
+                case "41057":
+                    accessory.Method.TextInfo("Attack MR", duration: 2000, true);
+                    break;
+                case "41058":
+                    accessory.Method.TextInfo("Attack TT", duration: 2000, true);
+                    break;
+                case "41059":
+                    accessory.Method.TextInfo("Attack GK", duration: 2000, true);
+                    break;
+            }
+        }
+
+        [ScriptMethod(name: "Tachi: Yukikaze", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41081"])]
+        public void TachiYukikaze(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Tachi: Yukikaze - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 2500;
+            dp.Scale = new(5, 50);
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Tachi: Kasha", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41083"])]
+        public void TachiKasha(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Tachi: Kasha";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.Delay = 7000;
+            dp.DestoryAt = 4000;
+            dp.Scale = new(20);
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        [ScriptMethod(name: "Concerted Dissolution", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41084"])]
+        public void ConcertedDissolution(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Concerted Dissolution - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 6000;
+            dp.Scale = new(40);
+            dp.Rotation = rot;
+            dp.FixRotation = true;
+            dp.Radian = float.Pi * 0.22f;
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+        }
+
+        [ScriptMethod(name: "Light's Chain", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41085"])]
+        public void LightsChain(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Light's Chain";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.Delay = 3000;
+            dp.DestoryAt = 5000;
+            dp.Scale = new(40);
+            dp.InnerScale = new(6);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
+        }
+
+        [ScriptMethod(name: "Dragonfall", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41086"])]
+        public void Dragonfall(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("Party Stack", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Guillotine", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41063"])]
+        public void Guillotine(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Guillotine";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 10000;
+            dp.Scale = new(40);
+            // dp.Rotation = rot - float.Pi / 2;
+            dp.FixRotation = true;
+            dp.Radian = float.Pi * 0.6f;
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+        }
+
+        [ScriptMethod(name: "Divine Dominion", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41094"])]
+        public void DivineDominion(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Divine Dominion - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 2000;
+            dp.Scale = new(6);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        [ScriptMethod(name: "Ark Shield", eventType: EventTypeEnum.AddCombatant, eventCondition: ["DataId:18260"])]
+        public void ArkShield(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("Attack Shield", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Rampage", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4107[34])$"])]
+        public void Rampage(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Rampage - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 5000;
+
+            switch (@event["ActionId"])
+            {
+                case "41073":
+                    dp.Scale = new(10, 60);
+
+                    accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+                    break;
+                case "41074":
+                    dp.Scale = new(20);
+
+                    accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+                    break;
+            }
+
+        }
+        #endregion
+
+
+        #region Utils
         private static bool ParseObjectId(string? idStr, out uint id)
         {
             id = 0;
@@ -216,5 +489,6 @@ namespace KDrawScript.Dev
                 return false;
             }
         }
+        #endregion
     }
 }
