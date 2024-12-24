@@ -1,0 +1,10 @@
+[
+    {
+        "Name": "Yuweyawata Field Station",
+        "Guid": "ad5876c4-31b1-43f6-9e5c-d8ab47c66027",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/refs/heads/main/07-dt/Yuweyawata_Field_Station.cs",
+        "UpdateInfo": "Initial Release"
+    }
+]
