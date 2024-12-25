@@ -336,6 +336,8 @@ namespace KDrawScript.Dev
             }
         }
 
+        // Cross + Gaze + Out -> Fan -> In
+
         [ScriptMethod(name: "Tachi: Yukikaze", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41081"])]
         public void TachiYukikaze(Event @event, ScriptAccessory accessory)
         {
@@ -357,8 +359,7 @@ namespace KDrawScript.Dev
             dp.Name = "Tachi: Kasha";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.Delay = 7000;
-            dp.DestoryAt = 4000;
+            dp.DestoryAt = 11000;
             dp.Scale = new(20);
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
@@ -377,7 +378,7 @@ namespace KDrawScript.Dev
             dp.Scale = new(40);
             dp.Rotation = rot;
             dp.FixRotation = true;
-            dp.Radian = float.Pi * 0.22f;
+            dp.Radian = float.Pi * (2 / 9);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -391,10 +392,10 @@ namespace KDrawScript.Dev
             dp.Name = "Light's Chain";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.Delay = 3000;
-            dp.DestoryAt = 5000;
+            dp.DestoryAt = 8000;
             dp.Scale = new(40);
-            dp.InnerScale = new(6);
+            dp.InnerScale = new(4);
+            dp.Radian = float.Pi * 2;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
         }
@@ -419,7 +420,7 @@ namespace KDrawScript.Dev
             dp.Scale = new(40);
             // dp.Rotation = rot - float.Pi / 2;
             dp.FixRotation = true;
-            dp.Radian = float.Pi * 0.6f;
+            dp.Radian = float.Pi * 0.5f;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -472,6 +473,205 @@ namespace KDrawScript.Dev
         }
         #endregion
 
+        #region 4
+        // Boss 4: Shadow Lord
+
+        [ScriptMethod(name: "Giga Slash Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4076[67])$"])]
+        public void GigaSlash(Event @event, ScriptAccessory accessory)
+        {
+            switch (@event["ActionId"])
+            {
+                case "40767":
+                    accessory.Method.TextInfo("Left then Right", duration: 2000, true);
+                    break;
+                case "40766":
+                    accessory.Method.TextInfo("Right then Left", duration: 2000, true);
+                    break;
+            }
+        }
+        // Until I can get the offset of the rotation for 2-3 swings
+        [ScriptMethod(name: "Giga Slash", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4076[89]|4077[01])$"])]
+        public void GigaSlashDraw(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Giga Slash - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.Scale = new(60);
+            dp.Rotation = rot;
+            dp.FixRotation = true;
+
+            switch (@event["ActionId"])
+            {
+                case "40768":
+                    dp.DestoryAt = 11500;
+                    dp.Radian = float.Pi * 1.25f;
+                    break;
+                case "40769":
+                    dp.Rotation = rot - float.Pi / 2;
+                    dp.DestoryAt = 1000;
+                    dp.Radian = float.Pi * 1.5f;
+                    break;
+                case "40770":
+                    dp.DestoryAt = 11500;
+                    dp.Radian = float.Pi * 1.25f;
+                    break;
+                case "40771":
+                    dp.Rotation = rot + float.Pi / 2;
+                    dp.DestoryAt = 1000;
+                    dp.Radian = float.Pi * 1.5f;
+                    break;
+            }
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+        }
+        
+        [ScriptMethod(name: "Umbra Wave", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40801"])]
+        public void UmbraWave(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Umbra Wave - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 1700;
+            dp.Scale = new(60, 5);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Flames of Hatred", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40809"])]
+        public void FlamesOfHatred(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("AOE", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Implosion", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[4567])$"])]
+        public void Implosion(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Implosion - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 9000;
+            dp.Scale = new(12);
+            dp.Radian = float.Pi;
+
+            // 774 L L 776 L R
+            switch (@event["ActionId"])
+            {
+                case "40774":
+                    dp.Rotation = float.Pi / 2;
+                    dp.Scale = new(50);
+                    break;
+                case "40775":
+                    dp.Rotation = -float.Pi / 2;
+                    break;
+                case "40776":
+                    dp.Rotation = float.Pi / 2;
+                    dp.Scale = new(50);
+                    break;
+                case "40777":
+                    dp.Rotation = -float.Pi / 2;
+                    break;
+            }
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+        }
+
+        [ScriptMethod(name: "Cthonic Fury", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[89])$"])]
+        public void CthonicFury(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("AOE & Arena Transition", duration: 2000, true);
+        }
+
+        [ScriptMethod(name: "Burning Moat", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40781"])]
+        public void BurningMoat(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Burning Moat - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(15);
+            dp.InnerScale = new(5);
+            dp.Radian = float.Pi * 2;
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
+        }
+
+        [ScriptMethod(name: "Burning Court", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40780"])]
+        public void BurningCourt(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Burning Court - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(8);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        [ScriptMethod(name: "Giga Slash: Nightfall Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4202[0123])$"])]
+        public void GigaSlashNightfall(Event @event, ScriptAccessory accessory)
+        {
+            switch (@event["ActionId"])
+            {
+                case "42020":
+                    accessory.Method.TextInfo("Right - Left - Back", duration: 5000, true);
+                    break;
+                case "42021":
+                    accessory.Method.TextInfo("Right - Left - Front", duration: 5000, true);
+                    break;
+                case "42022":
+                    accessory.Method.TextInfo("Left - Right - Back", duration: 5000, true);
+                    break;
+                case "42023":
+                    accessory.Method.TextInfo("Left - Right - Front", duration: 5000, true);
+                    break;
+            }
+        }
+
+        [ScriptMethod(name: "Binding Sigil", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41513"])]
+        public void BindingSigil(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Binding Sigil - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 10000;
+            dp.Scale = new(9);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        [ScriptMethod(name: "Soul Binding", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:41514"])]
+        public void SoulBinding(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            accessory.Method.RemoveDraw($"Binding Sigil - {sid}");
+        }
+
+        [ScriptMethod(name: "Damning Strikes", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40791"])]
+        public void DamningStrikes(Event @event, ScriptAccessory accessory)
+        {
+            accessory.Method.TextInfo("Take Towers", duration: 2000, true);
+        }
+        #endregion
 
         #region Utils
         private static bool ParseObjectId(string? idStr, out uint id)
