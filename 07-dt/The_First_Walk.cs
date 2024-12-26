@@ -337,7 +337,7 @@ namespace KDrawScript.Dev
         }
 
         // Cross + Gaze + Out -> Fan -> In
-
+        /*
         [ScriptMethod(name: "Tachi: Yukikaze", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41081"])]
         public void TachiYukikaze(Event @event, ScriptAccessory accessory)
         {
@@ -350,7 +350,7 @@ namespace KDrawScript.Dev
             dp.Scale = new(5, 50);
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
-
+        */
         [ScriptMethod(name: "Tachi: Kasha", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41083"])]
         public void TachiKasha(Event @event, ScriptAccessory accessory)
         {
@@ -359,7 +359,8 @@ namespace KDrawScript.Dev
             dp.Name = "Tachi: Kasha";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.DestoryAt = 11000;
+            dp.Delay = 3000;
+            dp.DestoryAt = 8000;
             dp.Scale = new(20);
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
@@ -376,9 +377,7 @@ namespace KDrawScript.Dev
             dp.Owner = sid;
             dp.DestoryAt = 6000;
             dp.Scale = new(40);
-            dp.Rotation = rot;
-            dp.FixRotation = true;
-            dp.Radian = float.Pi * (2 / 9);
+            dp.Radian = float.Pi * 0.23f;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -392,7 +391,8 @@ namespace KDrawScript.Dev
             dp.Name = "Light's Chain";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.DestoryAt = 8000;
+            dp.Delay = 2000;
+            dp.DestoryAt = 6000;
             dp.Scale = new(40);
             dp.InnerScale = new(4);
             dp.Radian = float.Pi * 2;
@@ -414,13 +414,11 @@ namespace KDrawScript.Dev
 
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = "Guillotine";
-            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
             dp.DestoryAt = 10000;
             dp.Scale = new(40);
-            // dp.Rotation = rot - float.Pi / 2;
-            dp.FixRotation = true;
-            dp.Radian = float.Pi * 0.5f;
+            dp.Radian = float.Pi * 1.35f;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -454,7 +452,7 @@ namespace KDrawScript.Dev
             dp.Name = $"Rampage - {sid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.DestoryAt = 5000;
+            dp.DestoryAt = 7000;
 
             switch (@event["ActionId"])
             {
