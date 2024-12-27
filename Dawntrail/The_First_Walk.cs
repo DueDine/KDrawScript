@@ -6,7 +6,7 @@ using KodakkuAssist.Module.Draw;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "69c6613b-0d45-48d5-adcf-bc90075cc0ba", version: "0.0.0.1", author: "Due")]
+    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.2", author: "Due")]
     public class FirstWalk
     {
 
@@ -59,7 +59,7 @@ namespace KDrawScript.Dev
             }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("Out -> In", duration: 2000, true);
+            accessory.Method.TextInfo("钢铁 -> 月环", duration: 2000, true);
 
             var dp2 = accessory.Data.GetDefaultDrawProperties();
             dp2.Name = "Knuckle Sandwich - In";
@@ -99,7 +99,7 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 5000;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("Tank Stack", duration: 2000, true);
+            accessory.Method.TextInfo("T 分摊死刑", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Banish", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40947"])]
@@ -129,7 +129,7 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 4500;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("Spread & Do not overlap", duration: 2000, true);
+            accessory.Method.TextInfo("分散", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Auroral Uppercut", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4095[012])$"])]
@@ -195,7 +195,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Asuran Fists", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40956"])]
         public void AsuranFists(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Alliance Stack", duration: 2000, true);
+            accessory.Method.TextInfo("分摊", duration: 2000, true);
         }
         #endregion
 
@@ -237,7 +237,7 @@ namespace KDrawScript.Dev
                     dp.InnerScale = new(17);
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
-                    accessory.Method.TextInfo("To Front", duration: 2000, true);
+                    // accessory.Method.TextInfo("To Front", duration: 2000, true);
                     break;
                 case "40816":
                     dp.Scale = new(24);
@@ -251,13 +251,13 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Baleful Breath", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:39922"])]
         public void BalefulBreath(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Alliance Line Stack", duration: 2000, true);
+            accessory.Method.TextInfo("分摊", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Hurricane Wing", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40817"])]
         public void HurricaneWing(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Multiple AOE", duration: 2000, true);
+            accessory.Method.TextInfo("连续多次 AOE", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Absolute Terror", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40846"])]
@@ -319,13 +319,13 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "41057":
-                    accessory.Method.TextInfo("Attack MR", duration: 2000, true);
+                    accessory.Method.TextInfo("攻击 MR", duration: 2000, true);
                     break;
                 case "41058":
-                    accessory.Method.TextInfo("Attack TT", duration: 2000, true);
+                    accessory.Method.TextInfo("攻击 TT", duration: 2000, true);
                     break;
                 case "41059":
-                    accessory.Method.TextInfo("Attack GK", duration: 2000, true);
+                    accessory.Method.TextInfo("攻击 GK", duration: 2000, true);
                     break;
             }
         }
@@ -397,7 +397,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Dragonfall", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41086"])]
         public void Dragonfall(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Party Stack", duration: 2000, true);
+            accessory.Method.TextInfo("小队分摊", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Guillotine", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41063"])]
@@ -435,7 +435,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Ark Shield", eventType: EventTypeEnum.AddCombatant, eventCondition: ["DataId:18260"])]
         public void ArkShield(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Attack Shield", duration: 2000, true);
+            accessory.Method.TextInfo("攻击 Shield", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Rampage", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4107[34])$"])]
@@ -474,10 +474,10 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "40767":
-                    accessory.Method.TextInfo("Left then Right", duration: 2000, true);
+                    accessory.Method.TextInfo("左 -> 右", duration: 2000, true);
                     break;
                 case "40766":
-                    accessory.Method.TextInfo("Right then Left", duration: 2000, true);
+                    accessory.Method.TextInfo("右 -> 左", duration: 2000, true);
                     break;
             }
         }
@@ -627,7 +627,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Cthonic Fury", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[89])$"])]
         public void CthonicFury(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE & Arena Transition", duration: 2000, true);
+            accessory.Method.TextInfo("AOE & 转场", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Burning Moat", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40781"])]
@@ -668,16 +668,16 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "42020":
-                    accessory.Method.TextInfo("Right - Left - Back", duration: 5000, true);
+                    accessory.Method.TextInfo("右 -> 左 -> 后", duration: 5000, true);
                     break;
                 case "42021":
-                    accessory.Method.TextInfo("Right - Left - Front", duration: 5000, true);
+                    accessory.Method.TextInfo("右 -> 左 -> 前", duration: 5000, true);
                     break;
                 case "42022":
-                    accessory.Method.TextInfo("Left - Right - Back", duration: 5000, true);
+                    accessory.Method.TextInfo("左 -> 右 -> 后", duration: 5000, true);
                     break;
                 case "42023":
-                    accessory.Method.TextInfo("Left - Right - Front", duration: 5000, true);
+                    accessory.Method.TextInfo("左 -> 右 -> 前", duration: 5000, true);
                     break;
             }
         }
@@ -708,7 +708,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Damning Strikes", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40791"])]
         public void DamningStrikes(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("Take Towers", duration: 2000, true);
+            accessory.Method.TextInfo("踩塔", duration: 2000, true);
         }
         #endregion
 
