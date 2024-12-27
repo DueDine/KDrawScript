@@ -1,9 +1,0 @@
-Ref/
-bin/
-obj/
-.vs/
-.editorconfig
-*.sln
-*.csproj
-GlobalSuppressions.cs
-*.json
