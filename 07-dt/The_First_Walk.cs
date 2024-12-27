@@ -1,15 +1,12 @@
 using KodakkuAssist.Script;
 using KodakkuAssist.Module.GameEvent;
 using System;
-using System.Threading;
 using KodakkuAssist.Module.Draw;
-using Newtonsoft.Json;
-using FFXIVClientStructs.FFXIV.Common.Math;
 
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "69c6613b-0d45-48d5-adcf-bc90075cc0ba  ", version: "0.0.0.1", author: "Due")]
+    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "69c6613b-0d45-48d5-adcf-bc90075cc0ba", version: "0.0.0.1", author: "Due")]
     public class FirstWalk
     {
 
@@ -228,9 +225,6 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "40811":
-                    if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
-                    dp.Rotation = rot;
-                    dp.FixRotation = true;
                     dp.Radian = float.Pi * 0.50f;
                     dp.Scale = new(40);
                     dp.Color = accessory.Data.DefaultSafeColor;
@@ -572,15 +566,62 @@ namespace KDrawScript.Dev
                     dp.Rotation = -float.Pi / 2;
                     break;
                 case "40776":
-                    dp.Rotation = float.Pi / 2;
+                    dp.Rotation = -float.Pi / 2;
                     dp.Scale = new(50);
                     break;
                 case "40777":
-                    dp.Rotation = -float.Pi / 2;
+                    dp.Rotation = float.Pi / 2;
                     break;
             }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
+        }
+
+        [ScriptMethod(name: "Burning Keep", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40782"])]
+        public void BurningKeep(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Burning Keep - 1";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(23, 11.5f);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+
+            dp.Name = $"Burning Keep - 2";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(23, 11.5f);
+            dp.Rotation = float.Pi;
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Burning Battlements", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40783"])]
+        public void BurningBattlements(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Burning Battlements - 1";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(23, 11.5f);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+
+            dp.Name = $"Burning Battlements - 2";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Owner = sid;
+            dp.DestoryAt = 7000;
+            dp.Scale = new(23, 11.5f);
+
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
 
         [ScriptMethod(name: "Cthonic Fury", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[89])$"])]
