@@ -9,7 +9,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "69c6613b-0d45-48d5-adcf-bc90075cc0ba  ", version: "0.0.0.1", author: "Due")]
+    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "69c6613b-0d45-48d5-adcf-bc90075cc0ba", version: "0.0.0.1", author: "Due")]
     public class FirstWalk
     {
 
