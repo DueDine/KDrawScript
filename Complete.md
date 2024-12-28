@@ -1,5 +1,6 @@
 ## Heavensward
-
+- Alexander - The Fist of the Son (A5)
+- Alexander - The Eyes of the Creator (A9)
 ## Stormblood
 
 ## Shadowbringers
