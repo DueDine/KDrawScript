@@ -8,7 +8,7 @@ using System;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.1")]
+    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.1", author: "Due")]
     public class Cloud_of_Darkness_Chaotic
     {
         private string Embrace = string.Empty;
@@ -21,7 +21,7 @@ namespace KDrawScript.Dev
             accessory.Method.RemoveDraw(".*");
         }
         #region P1
-        [ScriptMethod(name: "Blade of Darkness", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
+        [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
         public void BladeofDarkness(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
@@ -55,13 +55,13 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Deluge of Darkness", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40509|40510|40456)$"])]
+        [ScriptMethod(name: "AOE 提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40509|40510|40456)$"])]
         public void DelugeofDarkness(Event @event, ScriptAccessory accessory)
         {
             accessory.Method.TextInfo("AOE", 2000, true);
         }
 
-        [ScriptMethod(name: "Razing-volley Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40511"])]
+        [ScriptMethod(name: "Razing-volley Particle Beam 场外车轮激光", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40511"])]
         public void RazingvolleyParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
@@ -93,14 +93,14 @@ namespace KDrawScript.Dev
             accessory.Method.TextInfo("小队直线分摊", 2000, true);
         }
 
-        [ScriptMethod(name: "Unholy Darkness", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0064"])]
+        [ScriptMethod(name: "Unholy Darkness 治疗分组分摊", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0064"])]
         public void UnholyDarkness(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
 
-            dp.Name = $"Rapid-sequence Particle Beam AOE - {tid}";
+            dp.Name = $"Unholy Darkness - {tid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(6);
             dp.Owner = tid;
@@ -109,7 +109,7 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
 
-        [ScriptMethod(name: "Flare", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:015A"])]
+        [ScriptMethod(name: "Flare 核爆绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:015A"])]
         public void Flare(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -146,7 +146,7 @@ namespace KDrawScript.Dev
 
         }
 
-        [ScriptMethod(name: "Embrace AOE", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0228"])]
+        [ScriptMethod(name: "Embrace AOE 放手前后绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0228"])]
         public void EmbraceAOE(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -168,7 +168,7 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
         
-        [ScriptMethod(name: "Endeath", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40515|40531)$"])]
+        [ScriptMethod(name: "Endeath 吸引提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40515|40531)$"])]
         public void Endeath(Event @event, ScriptAccessory accessory)
         {
             if (@event["ActionId"] == "40515")
@@ -182,7 +182,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Delay Death & Aero", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:4182"])]
+        [ScriptMethod(name: "Delay Death & Aero 延时提醒", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:4182"])]
         public void DelayDeathAero(Event @event, ScriptAccessory accessory)
         {
             if (string.IsNullOrEmpty(DelayWhat)) return;
@@ -199,7 +199,7 @@ namespace KDrawScript.Dev
             DelayWhat = string.Empty;
         }
 
-        [ScriptMethod(name: "Enaero", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40524|40532)$"])]
+        [ScriptMethod(name: "Enaero 击退提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40524|40532)$"])]
         public void Enaero(Event @event, ScriptAccessory accessory)
         {
             if (@event["ActionId"] == "40524")
@@ -286,20 +286,15 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Break IV", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40527"])]
+        [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40527"])]
         public void BreakIV(Event @event, ScriptAccessory accessory)
         {
             accessory.Method.TextInfo("背对", 2000, true);
         }
         #endregion
         #region P2
-        [ScriptMethod(name: "Particle Concentration", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40472"])]
-        public void ParticleConcentration(Event @event, ScriptAccessory accessory)
-        {
-            accessory.Method.TextInfo("准备踩塔", 2000, true);
-        }
 
-        [ScriptMethod(name: "Ghastly Gloom", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
+        [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
         public void GhastlyGloom(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
@@ -332,7 +327,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Dark Energy Particle Beam", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:2387"])]
+        [ScriptMethod(name: "Dark Energy Particle Beam 附身激光绘制", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:2387"])]
         public void DarkEnergyParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -361,7 +356,7 @@ namespace KDrawScript.Dev
          * TargetIcon 00EF Left 00F0 Right 00F2 6 Spread 00F1 2 Stack
          */
 
-        [ScriptMethod(name: "Third Art Of Darkness", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:regex:^(00EF|00F[012])$"])]
+        [ScriptMethod(name: "Third Art Of Darkness 小云三连", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:regex:^(00EF|00F[012])$"])]
         public void ThirdArtOfDarkness(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -418,7 +413,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Evil Seed", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0227"])]
+        [ScriptMethod(name: "Evil Seed 放种子绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0227"])]
         public void EvilSeed(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -434,7 +429,7 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
 
-        [ScriptMethod(name: "Evil Seed Tether", eventType: EventTypeEnum.Tether, eventCondition: ["Id:0012"])]
+        [ScriptMethod(name: "Evil Seed Tether 拉线提醒", eventType: EventTypeEnum.Tether, eventCondition: ["Id:0012"])]
         public void EvilSeedTether(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -443,7 +438,7 @@ namespace KDrawScript.Dev
             accessory.Method.TextInfo("拉线", 2000, true);
         }
 
-        [ScriptMethod(name: "Diffusive Force Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40464"])]
+        [ScriptMethod(name: "Diffusive Force Particle Beam 分散点名绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40464"])]
         public void DiffusiveForceParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
@@ -471,7 +466,7 @@ namespace KDrawScript.Dev
             }
         }
         */
-        [ScriptMethod(name: "Phaser AOE", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40497"])]
+        [ScriptMethod(name: "Phaser AOE 小云扇形绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40497"])]
         public void PhaserAOE(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
@@ -496,7 +491,7 @@ namespace KDrawScript.Dev
             accessory.Method.RemoveDraw($"Phaser AOE - {sid}");
         }
 
-        [ScriptMethod(name: "Active Pivot Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"])]
+        [ScriptMethod(name: "Active Pivot Particle Beam 90度前后炮(实验版)", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"])]
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
