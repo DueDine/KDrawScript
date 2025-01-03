@@ -2,7 +2,7 @@
     {
       "Name": "Jeuno The First Walk",
       "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
-      "Version": "0.0.0.2",
+      "Version": "0.0.0.3",
       "Author": "Due",
       "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
@@ -30,7 +30,7 @@
     {
       "Name": "The Cloud of Darkness (Chaotic)",
       "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
-      "Version": "0.0.0.1",
+      "Version": "0.0.0.2",
       "Author": "Due",
       "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
     }
