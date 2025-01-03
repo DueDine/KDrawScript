@@ -6,9 +6,12 @@ using KodakkuAssist.Module.Draw;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.2", author: "Due")]
+    [ScriptType(name: "Jeuno: The First Walk", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.3", author: "Due")]
     public class FirstWalk
     {
+
+        [UserSetting(note: "是否开启文字提醒")]
+        public bool EnableTextInfo { get; set; } = true;
 
         public void Init(ScriptAccessory accessory)
         {
@@ -17,24 +20,12 @@ namespace KDrawScript.Dev
 
         #region 1
         // Boss 1: Prishe of the Distant Chains
-        [ScriptMethod(name: "Banishga", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40935"])]
+        [ScriptMethod(name: "Banishga", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40935|40954)$"])]
         public void Banishga(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE", duration: 2000, true);
+            SendText("AOE", accessory);
         }
 
-        [ScriptMethod(name: "Banishga IV", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40954"])]
-        public void BanishgaIV(Event @event, ScriptAccessory accessory)
-        {
-            accessory.Method.TextInfo("AOE", duration: 2000, true);
-        }
-        /*
-        [ScriptMethod(name: "Banish Storm", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40946"])]
-        public void BanishStorm(Event @event, ScriptAccessory accessory)
-        {
-            accessory.Method.TextInfo("AOE", duration: 2000, true);
-        }
-        */
         [ScriptMethod(name: "Knuckle Sandwich", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4094[01]|40939)$"])]
         public void KnuckleSandwich(Event @event, ScriptAccessory accessory)
         {
@@ -59,31 +50,28 @@ namespace KDrawScript.Dev
             }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("钢铁 -> 月环", duration: 2000, true);
+            SendText("钢铁 -> 月环", accessory);
 
-            var dp2 = accessory.Data.GetDefaultDrawProperties();
-            dp2.Name = "Knuckle Sandwich - In";
-            dp2.Radian = float.Pi * 2;
-            dp2.Scale = new(50);
-            dp2.Color = accessory.Data.DefaultDangerColor;
-            dp2.Owner = sid;
-            dp2.DestoryAt = 1000;
-            dp2.Delay = 12500;
+            dp.Name = "Knuckle Sandwich - In";
+            dp.Radian = float.Pi * 2;
+            dp.Scale = new(50);
+            dp.DestoryAt = 1000;
+            dp.Delay = 12500;
 
             switch (@event["ActionId"])
             {
                 case "40940":
-                    dp2.InnerScale = new(18);
+                    dp.InnerScale = new(18);
                     break;
                 case "40941":
-                    dp2.InnerScale = new(27);
+                    dp.InnerScale = new(27);
                     break;
                 case "40939":
-                    dp2.InnerScale = new(9);
+                    dp.InnerScale = new(9);
                     break;
             }
 
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp2);
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
 
         [ScriptMethod(name: "Nullifying Dropkick", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40957"])]
@@ -99,7 +87,7 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 5000;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("T 分摊死刑", duration: 2000, true);
+            SendText("T 分摊死刑", accessory);
         }
 
         [ScriptMethod(name: "Banish", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40947"])]
@@ -108,7 +96,7 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Banish-{sid}";
+            dp.Name = $"Banish - {sid}";
             dp.Scale = new(6);
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
@@ -116,60 +104,28 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
 
-        [ScriptMethod(name: "Holy", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40963"])]
-        public void Holy(Event @event, ScriptAccessory accessory)
-        {
-            if (!ParseObjectId(@event["TargetId"], out var tid)) return;
-
-            var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Holy-{tid}";
-            dp.Scale = new(6);
-            dp.Color = accessory.Data.DefaultDangerColor;
-            dp.Owner = tid;
-            dp.DestoryAt = 4500;
-
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            accessory.Method.TextInfo("分散", duration: 2000, true);
-        }
-
         [ScriptMethod(name: "Auroral Uppercut", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4095[012])$"])]
         public void AuroralUppercut(Event @event, ScriptAccessory accessory)
         {
-            var level = 0;
-
-            switch (@event["ActionId"])
-            {
-                case "40950":
-                    level = 1;
-                    break;
-                case "40951":
-                    level = 2;
-                    break;
-                case "40952":
-                    level = 3;
-                    break;
-            }
-
-            if (level == 0) return;
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            accessory.Log.Debug($"Auroral Uppercut: {level}");
+
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Auroral Uppercut-{level}";
+            dp.Name = $"Auroral Uppercut";
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Owner = accessory.Data.Me;
             dp.TargetObject = sid;
             dp.Rotation = float.Pi;
             dp.DestoryAt = 10000;
 
-            switch (level)
+            switch (@event["ActionId"])
             {
-                case 1:
-                    dp.Scale = new(1.5f, 12); // Need more test
+                case "40950":
+                    dp.Scale = new(1.5f, 12);
                     break;
-                case 2:
+                case "40951":
                     dp.Scale = new(1.5f, 25);
                     break;
-                case 3:
+                case "40952":
                     dp.Scale = new(1.5f, 38);
                     break;
             }
@@ -183,7 +139,7 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Explosion-{sid}";
+            dp.Name = $"Explosion - {sid}";
             dp.Scale = new(8);
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
@@ -192,11 +148,6 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
 
-        [ScriptMethod(name: "Asuran Fists", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40956"])]
-        public void AsuranFists(Event @event, ScriptAccessory accessory)
-        {
-            accessory.Method.TextInfo("分摊", duration: 2000, true);
-        }
         #endregion
 
         #region 2
@@ -205,7 +156,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Dark Matter Blast", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40854"])]
         public void DarkMatterBlast(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE", duration: 2000, true);
+            SendText("AOE", accessory);
         }
 
         [ScriptMethod(name: "Offensive Posture", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4081[146])$"])]
@@ -237,7 +188,6 @@ namespace KDrawScript.Dev
                     dp.InnerScale = new(17);
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
-                    // accessory.Method.TextInfo("To Front", duration: 2000, true);
                     break;
                 case "40816":
                     dp.Scale = new(24);
@@ -245,19 +195,12 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     break;
             }
-
-        }
-
-        [ScriptMethod(name: "Baleful Breath", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:39922"])]
-        public void BalefulBreath(Event @event, ScriptAccessory accessory)
-        {
-            accessory.Method.TextInfo("分摊", duration: 2000, true);
         }
 
         [ScriptMethod(name: "Hurricane Wing", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40817"])]
         public void HurricaneWing(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("连续多次 AOE", duration: 2000, true);
+            SendText("连续多段 AOE", accessory);
         }
 
         [ScriptMethod(name: "Absolute Terror", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40846"])]
@@ -271,7 +214,6 @@ namespace KDrawScript.Dev
             dp.Owner = sid;
             dp.DestoryAt = 7000;
             dp.Scale = new(20, 70);
-            dp.Position = new(-500, -500, 570);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
@@ -319,32 +261,18 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "41057":
-                    accessory.Method.TextInfo("攻击 MR", duration: 2000, true);
+                    SendText("攻击 MR", accessory);
                     break;
                 case "41058":
-                    accessory.Method.TextInfo("攻击 TT", duration: 2000, true);
+                    SendText("攻击 TT", accessory);
                     break;
                 case "41059":
-                    accessory.Method.TextInfo("攻击 GK", duration: 2000, true);
+                    SendText("攻击 GK", accessory);
                     break;
             }
         }
 
         // Cross + Gaze + Out -> Fan -> In
-        /*
-        [ScriptMethod(name: "Tachi: Yukikaze", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41081"])]
-        public void TachiYukikaze(Event @event, ScriptAccessory accessory)
-        {
-            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Tachi: Yukikaze - {sid}";
-            dp.Color = accessory.Data.DefaultDangerColor;
-            dp.Owner = sid;
-            dp.DestoryAt = 2500;
-            dp.Scale = new(5, 50);
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
-        }
-        */
         [ScriptMethod(name: "Tachi: Kasha", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41083"])]
         public void TachiKasha(Event @event, ScriptAccessory accessory)
         {
@@ -363,7 +291,6 @@ namespace KDrawScript.Dev
         public void ConcertedDissolution(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = $"Concerted Dissolution - {sid}";
@@ -397,14 +324,13 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Dragonfall", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41086"])]
         public void Dragonfall(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("小队分摊", duration: 2000, true);
+            SendText("小队分摊", accessory);
         }
 
         [ScriptMethod(name: "Guillotine", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41063"])]
         public void Guillotine(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            if (!float.TryParse(@event["SourceRotation"], out var rot)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = "Guillotine";
@@ -435,7 +361,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Ark Shield", eventType: EventTypeEnum.AddCombatant, eventCondition: ["DataId:18260"])]
         public void ArkShield(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("攻击 Shield", duration: 2000, true);
+            SendText("攻击 Shield", accessory);
         }
 
         [ScriptMethod(name: "Rampage", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4107[34])$"])]
@@ -467,7 +393,7 @@ namespace KDrawScript.Dev
 
         #region 4
         // Boss 4: Shadow Lord
-
+        /* Would be override by in-game
         [ScriptMethod(name: "Giga Slash Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4076[67])$"])]
         public void GigaSlash(Event @event, ScriptAccessory accessory)
         {
@@ -481,7 +407,7 @@ namespace KDrawScript.Dev
                     break;
             }
         }
-        // Until I can get the offset of the rotation for 2-3 swings
+        */
         [ScriptMethod(name: "Giga Slash", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4076[89]|4077[01])$"])]
         public void GigaSlashDraw(Event @event, ScriptAccessory accessory)
         {
@@ -539,7 +465,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Flames of Hatred", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40809"])]
         public void FlamesOfHatred(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE", duration: 2000, true);
+            SendText("AOE", accessory);
         }
 
         [ScriptMethod(name: "Implosion", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[4567])$"])]
@@ -583,22 +509,13 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Burning Keep - 1";
+            dp.Name = $"Burning Keep";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
-            dp.Scale = new(23, 11.5f);
+            dp.Scale = new(23, 23);
 
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
-
-            dp.Name = $"Burning Keep - 2";
-            dp.Color = accessory.Data.DefaultDangerColor;
-            dp.Owner = sid;
-            dp.DestoryAt = 7000;
-            dp.Scale = new(23, 11.5f);
-            dp.Rotation = float.Pi;
-
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
         }
 
         [ScriptMethod(name: "Burning Battlements", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40783"])]
@@ -607,27 +524,19 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Burning Battlements - 1";
+            dp.Name = $"Burning Battlements";
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
-            dp.Scale = new(23, 11.5f);
+            dp.Scale = new(23, 23);
 
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
-
-            dp.Name = $"Burning Battlements - 2";
-            dp.Color = accessory.Data.DefaultSafeColor;
-            dp.Owner = sid;
-            dp.DestoryAt = 7000;
-            dp.Scale = new(23, 11.5f);
-
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
         }
 
         [ScriptMethod(name: "Cthonic Fury", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4077[89])$"])]
         public void CthonicFury(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE & 转场", duration: 2000, true);
+            SendText("AOE & 转场", accessory);
         }
 
         [ScriptMethod(name: "Burning Moat", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40781"])]
@@ -668,16 +577,16 @@ namespace KDrawScript.Dev
             switch (@event["ActionId"])
             {
                 case "42020":
-                    accessory.Method.TextInfo("右 -> 左 -> 后", duration: 5000, true);
+                    SendText("右 -> 左 -> 后", accessory);
                     break;
                 case "42021":
-                    accessory.Method.TextInfo("右 -> 左 -> 前", duration: 5000, true);
+                    SendText("右 -> 左 -> 前", accessory);
                     break;
                 case "42022":
-                    accessory.Method.TextInfo("左 -> 右 -> 后", duration: 5000, true);
+                    SendText("左 -> 右 -> 后", accessory);
                     break;
                 case "42023":
-                    accessory.Method.TextInfo("左 -> 右 -> 前", duration: 5000, true);
+                    SendText("左 -> 右 -> 前", accessory);
                     break;
             }
         }
@@ -708,7 +617,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Damning Strikes", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40791"])]
         public void DamningStrikes(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("踩塔", duration: 2000, true);
+            SendText("踩塔", accessory);
         }
         #endregion
 
@@ -727,6 +636,12 @@ namespace KDrawScript.Dev
             {
                 return false;
             }
+        }
+
+        private void SendText(string text, ScriptAccessory accessory, int duration = 2000, bool isImportant = true)
+        {
+            if (!EnableTextInfo) return;
+            accessory.Method.TextInfo(text, duration, isImportant);
         }
         #endregion
     }

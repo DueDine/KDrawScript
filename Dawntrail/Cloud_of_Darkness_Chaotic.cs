@@ -8,11 +8,14 @@ using System;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.1", author: "Due")]
+    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.2", author: "Due")]
     public class Cloud_of_Darkness_Chaotic
     {
         private string Embrace = string.Empty;
         private string DelayWhat = string.Empty;
+
+        [UserSetting(note: "是否开启文字提醒")]
+        public bool EnableTextInfo { get; set; } = true;
 
         public void Init(ScriptAccessory accessory)
         {
@@ -58,7 +61,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "AOE 提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40509|40510|40456)$"])]
         public void DelugeofDarkness(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("AOE", 2000, true);
+            SendText("AOE", accessory);
         }
 
         [ScriptMethod(name: "Razing-volley Particle Beam 场外车轮激光", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40511"])]
@@ -90,7 +93,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Rapid-sequence Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40512"])]
         public void RapidsequenceParticleBeam(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("小队直线分摊", 2000, true);
+            SendText("小队直线分摊", accessory);
         }
 
         [ScriptMethod(name: "Unholy Darkness 治疗分组分摊", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0064"])]
@@ -136,11 +139,11 @@ namespace KDrawScript.Dev
             {
                 case "012C":
                     Embrace = "Forward";
-                    accessory.Method.TextInfo("存储前方", 2000, true);
+                    SendText("存储前方", accessory);
                     break;
                 case "012D":
                     Embrace = "Backward";
-                    accessory.Method.TextInfo("存储后方", 2000, true);
+                    SendText("存储后方", accessory);
                     break;
             }
 
@@ -173,12 +176,12 @@ namespace KDrawScript.Dev
         {
             if (@event["ActionId"] == "40515")
             {
-                accessory.Method.TextInfo("准备吸引", 2000, true);
+                SendText("准备吸引", accessory);
             }
             else if (@event["ActionId"] == "40531")
             {
                 DelayWhat = "Endeath";
-                accessory.Method.TextInfo("存储吸引", 2000, true);
+                SendText("存储吸引", accessory);
             }
         }
 
@@ -189,11 +192,11 @@ namespace KDrawScript.Dev
 
             if (DelayWhat == "Endeath")
             {
-                accessory.Method.TextInfo("准备吸引", 2000, true);
+                SendText("准备吸引", accessory);
             }
             else if (DelayWhat == "Enaero")
             {
-                accessory.Method.TextInfo("准备击退", 2000, true);
+                SendText("准备击退", accessory);
             }
 
             DelayWhat = string.Empty;
@@ -204,12 +207,12 @@ namespace KDrawScript.Dev
         {
             if (@event["ActionId"] == "40524")
             {
-                accessory.Method.TextInfo("准备击退", 2000, true);
+                SendText("准备击退", accessory);
             }
             else if (@event["ActionId"] == "40532")
             {
                 DelayWhat = "Enaero";
-                accessory.Method.TextInfo("存储击退", 2000, true);
+                SendText("存储击退", accessory);
             }
         }
 
@@ -289,7 +292,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40527"])]
         public void BreakIV(Event @event, ScriptAccessory accessory)
         {
-            accessory.Method.TextInfo("背对", 2000, true);
+            SendText("背对", accessory);
         }
         #endregion
         #region P2
@@ -435,7 +438,7 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
             if (tid != accessory.Data.Me) return;
 
-            accessory.Method.TextInfo("拉线", 2000, true);
+            SendText("拉线", accessory);
         }
 
         [ScriptMethod(name: "Diffusive Force Particle Beam 分散点名绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40464"])]
@@ -452,7 +455,7 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
-        /*
+        /* Conflict with in-game notice
         [ScriptMethod(name: "Phaser Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4049[56])$"])]
         public void PhaserText(Event @event, ScriptAccessory accessory)
         {
@@ -538,6 +541,12 @@ namespace KDrawScript.Dev
         private static Vector3 ParsePosition(Event @event, string type)
         {
             return JsonConvert.DeserializeObject<Vector3>(@event[type]);
+        }
+
+        private void SendText(string text, ScriptAccessory accessory, int duration = 2000, bool isImportant = true)
+        {
+            if (!EnableTextInfo) return;
+            accessory.Method.TextInfo(text, duration, isImportant);
         }
         #endregion
     }
