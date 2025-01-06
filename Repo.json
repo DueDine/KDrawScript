@@ -1,0 +1,44 @@
+[
+    {
+        "Name": "The Cloud of Darkness (Chaotic)",
+        "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
+        "Version": "0.0.0.2",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
+    },
+    {
+        "Name": "Yuweyawata Field Station",
+        "Guid": "6b354054-8066-4717-85b0-5ee7d44273a5",
+        "Version": "0.0.0.2",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Yuweyawata_Field_Station.cs"
+    },
+    {
+        "Name": "Jeuno: The First Walk",
+        "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
+        "Version": "0.0.0.3",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
+    },
+    {
+        "Name": "Abyssos: The Eighth Circle (P8)",
+        "Guid": "A8B2CE40-AD15-4F26-9CBE-C8AD1081F702",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Endwalker/Abyssos_The_Eighth_Circle.cs"
+    },
+    {
+        "Name": "Alexander - The Fist of the Son",
+        "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
+    },
+    {
+        "Name": "Alexander - The Eyes of the Creator",
+        "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
+    }
+]
