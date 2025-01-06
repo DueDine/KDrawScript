@@ -6,4 +6,4 @@ obj/
 *.sln
 *.csproj
 GlobalSuppressions.cs
-*.json
+packages.lock.json
