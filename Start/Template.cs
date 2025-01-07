@@ -6,7 +6,7 @@ using System;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "Template", territorys: [], guid: "d3b6a9b4-xxxx-xxxx-b7c7-ff1fce0e6cf2", version: "0.0.0.1")]
+    [ScriptType(name: "Template", territorys: [], guid: "d3b6a9b4-xxxx-xxxx-b7c7-ff1fce0e6cf2", version: "0.0.0.1", author: "Due")]
     public class Template
     {
         public void Init(ScriptAccessory accessory)
