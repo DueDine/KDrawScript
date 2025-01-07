@@ -35,6 +35,13 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
     },
     {
+        "Name": "Alexander - The Cuff of the Son",
+        "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
+    },
+    {
         "Name": "Alexander - The Eyes of the Creator",
         "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
         "Version": "0.0.0.1",
