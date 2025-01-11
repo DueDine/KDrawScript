@@ -28,6 +28,13 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Endwalker/Abyssos_The_Eighth_Circle.cs"
     },
     {
+        "Name": "The Copied Factory",
+        "Guid": "182DCBAA-AF3F-4576-BFA1-0F91CD3FEB04",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Copied_Factory.cs"
+    },
+    {
         "Name": "The Tower at Paradigm's Breach",
         "Guid": "C5E49762-7E9A-4CCC-8842-1912842420F4",
         "Version": "0.0.0.1",
