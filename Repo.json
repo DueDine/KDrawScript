@@ -28,6 +28,13 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Endwalker/Abyssos_The_Eighth_Circle.cs"
     },
     {
+        "Name": "The Tower at Paradigm's Breach",
+        "Guid": "C5E49762-7E9A-4CCC-8842-1912842420F4",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Tower_at_Paradigm's_Breach.cs"
+    },
+    {
         "Name": "Alexander - The Fist of the Son",
         "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
