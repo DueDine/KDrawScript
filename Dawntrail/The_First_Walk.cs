@@ -2,11 +2,13 @@ using KodakkuAssist.Script;
 using KodakkuAssist.Module.GameEvent;
 using System;
 using KodakkuAssist.Module.Draw;
+using Newtonsoft.Json;
+using FFXIVClientStructs.FFXIV.Common.Math;
 
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno The First Walk", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.3", author: "Due")]
+    [ScriptType(name: "Jeuno The First Walk", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.4", author: "Due")]
     public class FirstWalk
     {
 
@@ -368,6 +370,7 @@ namespace KDrawScript.Dev
         public void Rampage(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = $"Rampage - {sid}";
             dp.Color = accessory.Data.DefaultDangerColor;
@@ -378,6 +381,7 @@ namespace KDrawScript.Dev
             {
                 case "41073":
                     dp.Scale = new(10, 60);
+                    dp.TargetPosition = ParsePosition(@event, "EffectPosition");
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
                     break;
@@ -513,6 +517,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
+            dp.Rotation = 0f;
             dp.Scale = new(23, 23);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
@@ -528,6 +533,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
+            dp.Rotation = 0f;
             dp.Scale = new(23, 23);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
@@ -636,6 +642,11 @@ namespace KDrawScript.Dev
             {
                 return false;
             }
+        }
+
+        private static Vector3 ParsePosition(Event @event, string type)
+        {
+            return JsonConvert.DeserializeObject<Vector3>(@event[type]);
         }
 
         private void SendText(string text, ScriptAccessory accessory, int duration = 2000, bool isImportant = true)
