@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Yuweyawata Field Station", territorys: [1242], guid: "6b354054-8066-4717-85b0-5ee7d44273a5", version: "0.0.0.2", author: "Due")]
+    [ScriptType(name: "Yuweyawata Field Station 废弃据点玉韦亚瓦塔实验站", territorys: [1242], guid: "6b354054-8066-4717-85b0-5ee7d44273a5", version: "0.0.0.3", author: "Due")]
     public class Yuweyawata
     {
 
