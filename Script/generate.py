@@ -21,6 +21,8 @@ def parse(folder):
                     matches = pattern.findall(content)
                     for match in matches:
                         name, guid, version, author = match
+                        if "Deprecated" in name:
+                            continue
                         entry = {
                             "Name": name,
                             "Guid": guid,
