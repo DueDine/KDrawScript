@@ -14,13 +14,6 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
-        "Name": "Yuweyawata Field Station 废弃据点玉韦亚瓦塔实验站",
-        "Guid": "6b354054-8066-4717-85b0-5ee7d44273a5",
-        "Version": "0.0.0.3",
-        "Author": "Due",
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Yuweyawata_Field_Station.cs"
-    },
-    {
         "Name": "Abyssos The Eighth Circle (P8)",
         "Guid": "A8B2CE40-AD15-4F26-9CBE-C8AD1081F702",
         "Version": "0.0.0.1",
