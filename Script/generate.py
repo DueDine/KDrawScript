@@ -7,7 +7,7 @@ OUTPUT = 'Repo.json'
 LINK = "https://raw.githubusercontent.com/DueDine/KDrawScript/main/"
 
 pattern = re.compile(
-    r'\[ScriptType\(name: "(.*?)", territorys: \[.*?\], guid: "(.*?)", version: "(.*?)", author: "(.*?)"\)\]'
+    r'\[ScriptType\(name: "(.*?)", territorys: \[(.*?)\], guid: "(.*?)", version: "(.*?)", author: "(.*?)"\)\]'
 )
 
 def parse(folder):
@@ -20,7 +20,7 @@ def parse(folder):
                     content = f.read()
                     matches = pattern.findall(content)
                     for match in matches:
-                        name, guid, version, author = match
+                        name, territorys, guid, version, author = match
                         if "Deprecated" in name:
                             continue
                         entry = {
@@ -28,6 +28,7 @@ def parse(folder):
                             "Guid": guid,
                             "Version": version,
                             "Author": author,
+                            "TerritoryIds": f"[{territorys}]",
                             "DownloadUrl": f"{LINK}{os.path.relpath(file_path).replace(os.sep, '/')}"
                         }
                         entries.append(entry)
