@@ -23,12 +23,13 @@ def parse(folder):
                         name, territorys, guid, version, author = match
                         if "Deprecated" in name:
                             continue
+                        territory_ids = [int(t.strip()) for t in territorys.split(',') if t.strip().isdigit()]
                         entry = {
                             "Name": name,
                             "Guid": guid,
                             "Version": version,
                             "Author": author,
-                            "TerritoryIds": f"[{territorys}]",
+                            "TerritoryIds": territory_ids,
                             "DownloadUrl": f"{LINK}{os.path.relpath(file_path).replace(os.sep, '/')}"
                         }
                         entries.append(entry)
