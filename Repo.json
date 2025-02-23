@@ -4,6 +4,7 @@
         "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
         "Version": "0.0.0.2",
         "Author": "Due",
+        "TerritoryIds": "[1241]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
     },
     {
@@ -11,6 +12,7 @@
         "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
         "Version": "0.0.0.5",
         "Author": "Due",
+        "TerritoryIds": "[1248]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
@@ -18,6 +20,7 @@
         "Guid": "A8B2CE40-AD15-4F26-9CBE-C8AD1081F702",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[1087]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Endwalker/Abyssos_The_Eighth_Circle.cs"
     },
     {
@@ -25,6 +28,7 @@
         "Guid": "C5E49762-7E9A-4CCC-8842-1912842420F4",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[966]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Tower_at_Paradigm's_Breach.cs"
     },
     {
@@ -32,6 +36,7 @@
         "Guid": "182DCBAA-AF3F-4576-BFA1-0F91CD3FEB04",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[882]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Copied_Factory.cs"
     },
     {
@@ -39,6 +44,7 @@
         "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[521]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
     },
     {
@@ -46,6 +52,7 @@
         "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[520]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
     },
     {
@@ -53,6 +60,7 @@
         "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
         "Version": "0.0.0.1",
         "Author": "Due",
+        "TerritoryIds": "[580]",
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
     }
 ]
