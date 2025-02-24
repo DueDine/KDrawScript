@@ -50,7 +50,7 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Copied_Factory.cs"
     },
     {
-        "Name": "Alexander - The Cuff of the Son",
+        "Name": "Alexander - The Cuff of the Son (A6)",
         "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
         "Version": "0.0.0.1",
         "Author": "Due",
@@ -60,7 +60,7 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
     },
     {
-        "Name": "Alexander - The Fist of the Son",
+        "Name": "Alexander - The Fist of the Son (A5)",
         "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
         "Author": "Due",
@@ -70,7 +70,7 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
     },
     {
-        "Name": "Alexander - The Eyes of the Creator",
+        "Name": "Alexander - The Eyes of the Creator (A9)",
         "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
         "Version": "0.0.0.1",
         "Author": "Due",
