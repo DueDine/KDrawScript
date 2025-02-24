@@ -7,7 +7,7 @@ using System;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "Alexander - The Cuff of the Son", territorys: [521], guid: "E6835ED0-D91C-4946-B07E-3634337311D7", version: "0.0.0.1", author: "Due")]
+    [ScriptType(name: "Alexander - The Cuff of the Son (A6)", territorys: [521], guid: "E6835ED0-D91C-4946-B07E-3634337311D7", version: "0.0.0.1", author: "Due")]
     public class The_Cuff_of_the_Son
     {
         public void Init(ScriptAccessory accessory)
