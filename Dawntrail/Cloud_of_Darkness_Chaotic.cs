@@ -5,6 +5,11 @@ using KodakkuAssist.Script;
 using System.Threading;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
+using ECommons;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using System.Collections.Generic;
 
 namespace KDrawScript.Dev
 {
@@ -13,14 +18,23 @@ namespace KDrawScript.Dev
     {
         private string Embrace = string.Empty;
         private string DelayWhat = string.Empty;
+        private bool HaveLoomingChaos = false;
+        private readonly List<Vector3> FlarePoint = [];
+        private readonly List<Vector3> SeedPoint = []; // Only A, C Party Each have two points
+        private readonly List<uint> SeedTarget = [];
 
         [UserSetting(note: "是否开启文字提醒")]
         public bool EnableTextInfo { get; set; } = true;
+
+        [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
+        public bool EnableGuidance { get; set; } = false;
 
         public void Init(ScriptAccessory accessory)
         {
             Embrace = string.Empty;
             DelayWhat = string.Empty;
+            HaveLoomingChaos = false;
+            SeedTarget.Clear();
             accessory.Method.RemoveDraw(".*");
         }
         #region P1
@@ -105,6 +119,10 @@ namespace KDrawScript.Dev
 
             dp.Name = $"Unholy Darkness - {tid}";
             dp.Color = accessory.Data.DefaultDangerColor;
+            if (EnableGuidance)
+                if (IsInSameParty(accessory, tid))
+                    if (IsInSameStack(accessory, accessory.Data.Me, tid))
+                        dp.Color = accessory.Data.DefaultSafeColor;
             dp.Scale = new(6);
             dp.Owner = tid;
             dp.DestoryAt = 7000;
@@ -127,6 +145,20 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 6000;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+
+            if (accessory.Data.Me != tid || !EnableGuidance) return;
+            var index = InWhichParty(accessory, tid);
+            if (index == -1) return;
+
+            dp.Name = $"Flare Guide";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Scale = new(2);
+            dp.Owner = tid;
+            dp.DestoryAt = 5000;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.TargetPosition = FlarePoint[index];
+
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Grim Embrace", eventType: EventTypeEnum.Tether, eventCondition: ["Id:regex:^(012[CD])$"], UserControl = false)]
@@ -146,7 +178,6 @@ namespace KDrawScript.Dev
                     SendText("存储后方", accessory);
                     break;
             }
-
         }
 
         [ScriptMethod(name: "Embrace AOE 放手前后绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0228"])]
@@ -430,6 +461,15 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 8000;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+
+            if (!EnableGuidance) return;
+            if (IsInSameParty(accessory, tid)) SeedTarget.Add(tid); // Me included of course
+            if (SeedTarget.Count != 2) return;
+            if (!SeedTarget.Contains(accessory.Data.Me)) return; // Not in the list
+            var myIndex = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+            var otherIndex = accessory.Data.PartyList.IndexOf(SeedTarget.First(x => x != accessory.Data.Me));
+
+            // Smaller index get the left one
         }
 
         [ScriptMethod(name: "Evil Seed Tether 拉线提醒", eventType: EventTypeEnum.Tether, eventCondition: ["Id:0012"])]
@@ -518,6 +558,8 @@ namespace KDrawScript.Dev
             }
         }
 
+        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41673"])]
+        public void LoomingChaos(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
 
         #endregion
 
@@ -548,6 +590,27 @@ namespace KDrawScript.Dev
             if (!EnableTextInfo) return;
             accessory.Method.TextInfo(text, duration, isImportant);
         }
+
+        private bool IsInSameParty(ScriptAccessory accessory, uint target) => accessory.Data.PartyList.Contains(target);
+        private bool IsInSameStack(ScriptAccessory accessory, uint source, uint target)
+        {
+            var sourceIndex = accessory.Data.PartyList.IndexOf(source);
+            var targetIndex = accessory.Data.PartyList.IndexOf(target);
+            return (sourceIndex % 2) == (targetIndex % 2);
+        }
+
+        private unsafe int InWhichParty(ScriptAccessory accessory, uint target)
+        {
+            // Check index. 0 - 7 is party 0, 8 - 15 is party 1, 16 - 23 is party 2
+            var partyList = Svc.Party;
+            for (var i = 0; i < 24; i++)
+            {
+                var id = ((PartyMember*)partyList.GetAllianceMemberAddress(i))->EntityId;
+                if (id == target) return i / 8;
+            }
+            return -1;
+        }
+
         #endregion
     }
 }
