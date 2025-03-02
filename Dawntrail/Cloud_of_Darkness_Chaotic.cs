@@ -21,6 +21,7 @@ namespace KDrawScript.Dev
         private bool HaveLoomingChaos = false;
         private readonly List<Vector3> FlarePoint = [];
         private readonly List<Vector3> SeedPoint = []; // Only A, C Party Each have two points
+        private readonly List<Vector3> TetherPoint = []; // Only A, C Party Each have four points
         private readonly List<uint> SeedTarget = [];
 
         [UserSetting(note: "是否开启文字提醒")]
@@ -28,6 +29,17 @@ namespace KDrawScript.Dev
 
         [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
         public bool EnableGuidance { get; set; } = false;
+
+        [UserSetting(note: "请选择你的队伍。")]
+        public PartyEnum Party { get; set; } = PartyEnum.None;
+
+        public enum PartyEnum
+        {
+            None = -1,
+            A = 0,
+            B = 1,
+            C = 2
+        }
 
         public void Init(ScriptAccessory accessory)
         {
@@ -147,13 +159,20 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
 
             if (accessory.Data.Me != tid || !EnableGuidance) return;
-            var index = InWhichParty(accessory, tid);
+            var index = Party switch
+            {
+                PartyEnum.A => 0,
+                PartyEnum.B => 1,
+                PartyEnum.C => 2,
+                _ => -1
+            };
+            if (index == -1) index = InWhichParty(accessory, tid);
             if (index == -1) return;
 
             dp.Name = $"Flare Guide";
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Scale = new(2);
-            dp.Owner = tid;
+            dp.Owner = accessory.Data.Me;
             dp.DestoryAt = 5000;
             dp.ScaleMode |= ScaleMode.YByDistance;
             dp.TargetPosition = FlarePoint[index];
@@ -463,22 +482,60 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
 
             if (!EnableGuidance) return;
+            if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
             if (IsInSameParty(accessory, tid)) SeedTarget.Add(tid); // Me included of course
             if (SeedTarget.Count != 2) return;
             if (!SeedTarget.Contains(accessory.Data.Me)) return; // Not in the list
             var myIndex = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
             var otherIndex = accessory.Data.PartyList.IndexOf(SeedTarget.First(x => x != accessory.Data.Me));
+            var offset = (int)Party + (myIndex < otherIndex ? 1 : 2); // A, C Party Index at 1, 2, 3, 4
 
-            // Smaller index get the left one
+            dp.Name = $"Evil Seed Guide";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Scale = new(2);
+            dp.Owner = accessory.Data.Me;
+            dp.DestoryAt = 8000;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.TargetPosition = SeedPoint[offset];
+
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
-        [ScriptMethod(name: "Evil Seed Tether 拉线提醒", eventType: EventTypeEnum.Tether, eventCondition: ["Id:0012"])]
+        [ScriptMethod(name: "Evil Seed Tether 拉线站位", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"])]
         public void EvilSeedTether(Event @event, ScriptAccessory accessory)
         {
+            if (!EnableGuidance) return;
+            if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
             if (tid != accessory.Data.Me) return;
+            var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+            if (index == 1 || index == 2) return; // ST and H1 inner platform
 
-            SendText("拉线", accessory);
+            var priority = new int[] { -1, -1, -1, 1, -1, 2, 3, 4 };
+            var offset = (int)Party + priority[index];
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+
+            dp.Name = $"Evil Seed Tether Guide";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Scale = new(2);
+            dp.Owner = accessory.Data.Me;
+            dp.DestoryAt = 8000;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.TargetPosition = TetherPoint[offset];
+
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+        }
+
+        [ScriptMethod(name: "Particle Concentration 踩塔指引", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40472"])]
+        public void ParticleConcentration(Event @event, ScriptAccessory accessory)
+        {
+            if (!EnableGuidance) return;
+            if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
+            if (HaveLoomingChaos) return; // No support after position swap
+            // H1 Team take north / west. H2 Team take south / east
+            var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+            if (index == 1 || index == 2) return; // ST and H1 inner platform
         }
 
         [ScriptMethod(name: "Diffusive Force Particle Beam 分散点名绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40464"])]
@@ -558,7 +615,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41673"])]
+        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41673"], userControl: false)]
         public void LoomingChaos(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
 
         #endregion
@@ -580,10 +637,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        private static Vector3 ParsePosition(Event @event, string type)
-        {
-            return JsonConvert.DeserializeObject<Vector3>(@event[type]);
-        }
+        private static Vector3 ParsePosition(Event @event, string type) => JsonConvert.DeserializeObject<Vector3>(@event[type]);
 
         private void SendText(string text, ScriptAccessory accessory, int duration = 2000, bool isImportant = true)
         {
@@ -601,12 +655,14 @@ namespace KDrawScript.Dev
 
         private unsafe int InWhichParty(ScriptAccessory accessory, uint target)
         {
-            // Check index. 0 - 7 is party 0, 8 - 15 is party 1, 16 - 23 is party 2
-            var partyList = Svc.Party;
-            for (var i = 0; i < 24; i++)
+            var group = GroupManager.Instance()->MainGroup;
+            for (var index = 0; index <= 2; index++)
             {
-                var id = ((PartyMember*)partyList.GetAllianceMemberAddress(i))->EntityId;
-                if (id == target) return i / 8;
+                for (var j = 0; j < 8; j++)
+                {
+                    var id = group.GetAllianceMemberByGroupAndIndex(index, j)->EntityId;
+                    if (id == target) return index;
+                }
             }
             return -1;
         }
