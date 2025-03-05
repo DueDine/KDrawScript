@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno The First Walk 朱诺：第一巡行", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.5", author: "Due")]
+    [ScriptType(name: "Jeuno The First Walk 朱诺：第一巡行", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.6", author: "Due")]
     public class FirstWalk
     {
 
@@ -517,7 +517,8 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
-            dp.Rotation = 0f;
+            dp.Rotation = -float.Pi / 4;
+            dp.FixRotation = true;
             dp.Scale = new(23, 23);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
@@ -533,7 +534,8 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Owner = sid;
             dp.DestoryAt = 7000;
-            dp.Rotation = 0f;
+            dp.Rotation = -float.Pi / 4;
+            dp.FixRotation = true;
             dp.Scale = new(23, 23);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
