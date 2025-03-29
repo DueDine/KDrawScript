@@ -20,6 +20,16 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
+        "Name": "AAC Cruiserweight M4",
+        "Guid": "73D227EB-D2E2-40B6-8107-16E36A09FB8D",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1262
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M4.cs"
+    },
+    {
         "Name": "Abyssos The Eighth Circle (P8)",
         "Guid": "A8B2CE40-AD15-4F26-9CBE-C8AD1081F702",
         "Version": "0.0.0.1",
