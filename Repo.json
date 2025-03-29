@@ -20,6 +20,16 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
+        "Name": "AAC Cruiserweight M3",
+        "Guid": "E30016AA-1FD4-4E87-8152-15282D46B806",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1260
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
+    },
+    {
         "Name": "AAC Cruiserweight M4",
         "Guid": "73D227EB-D2E2-40B6-8107-16E36A09FB8D",
         "Version": "0.0.0.1",
