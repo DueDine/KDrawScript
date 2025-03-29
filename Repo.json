@@ -30,6 +30,16 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
     },
     {
+        "Name": "AAC Cruiserweight M2",
+        "Guid": "1EF7A8D1-1D46-4E4A-9051-CC392724CA18",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1258
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M2.cs"
+    },
+    {
         "Name": "AAC Cruiserweight M4",
         "Guid": "73D227EB-D2E2-40B6-8107-16E36A09FB8D",
         "Version": "0.0.0.1",
