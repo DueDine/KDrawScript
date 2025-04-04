@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 namespace KDrawScript.Dev
 {
 
-    [ScriptType(name: "Jeuno The First Walk 朱诺：第一巡行", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.6", author: "Due")]
+    [ScriptType(name: "Jeuno The First Walk 朱诺：第一巡行", territorys: [1248], guid: "5e7c9708-b36c-4b04-af16-43747b58b8ed", version: "0.0.0.7", author: "Due")]
     public class FirstWalk
     {
 
@@ -48,28 +48,6 @@ namespace KDrawScript.Dev
                     break;
                 case "40939":
                     dp.Scale = new(9);
-                    break;
-            }
-
-            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
-            SendText("钢铁 -> 月环", accessory);
-
-            dp.Name = "Knuckle Sandwich - In";
-            dp.Radian = float.Pi * 2;
-            dp.Scale = new(50);
-            dp.DestoryAt = 1000;
-            dp.Delay = 12500;
-
-            switch (@event["ActionId"])
-            {
-                case "40940":
-                    dp.InnerScale = new(18);
-                    break;
-                case "40941":
-                    dp.InnerScale = new(27);
-                    break;
-                case "40939":
-                    dp.InnerScale = new(9);
                     break;
             }
 
@@ -608,7 +586,7 @@ namespace KDrawScript.Dev
             dp.Name = $"Binding Sigil - {sid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
-            dp.DestoryAt = 10000;
+            dp.DestoryAt = 11000;
             dp.Scale = new(9);
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);

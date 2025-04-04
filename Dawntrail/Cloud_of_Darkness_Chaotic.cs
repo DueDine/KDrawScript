@@ -27,10 +27,10 @@ namespace KDrawScript.Dev
         [UserSetting(note: "是否开启文字提醒")]
         public bool EnableTextInfo { get; set; } = true;
 
-        [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
+        // [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
         public bool EnableGuidance { get; set; } = false;
 
-        [UserSetting(note: "请选择你的队伍。")]
+        // [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
 
         public enum PartyEnum
