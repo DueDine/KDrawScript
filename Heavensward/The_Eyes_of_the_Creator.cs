@@ -1,5 +1,4 @@
 ﻿using FFXIVClientStructs.FFXIV.Common.Math;
-using KodakkuAssist.Module.Draw;
 using KodakkuAssist.Module.GameEvent;
 using KodakkuAssist.Script;
 using Newtonsoft.Json;

@@ -30,7 +30,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = sid;
             dp.DestoryAt = 8000;
-            
+
             switch (@event["ActionId"])
             {
                 case "30958":

@@ -1,9 +1,9 @@
-using KodakkuAssist.Script;
-using KodakkuAssist.Module.GameEvent;
-using System;
-using KodakkuAssist.Module.Draw;
-using Newtonsoft.Json;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using KodakkuAssist.Module.Draw;
+using KodakkuAssist.Module.GameEvent;
+using KodakkuAssist.Script;
+using Newtonsoft.Json;
+using System;
 
 namespace KDrawScript.Dev
 {
@@ -428,7 +428,7 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
-        
+
         [ScriptMethod(name: "Umbra Wave", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40801"])]
         public void UmbraWave(Event @event, ScriptAccessory accessory)
         {

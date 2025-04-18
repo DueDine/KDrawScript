@@ -1,15 +1,14 @@
-﻿using FFXIVClientStructs.FFXIV.Common.Math;
+﻿using ECommons;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using KodakkuAssist.Module.Draw;
 using KodakkuAssist.Module.GameEvent;
 using KodakkuAssist.Script;
-using System.Threading;
 using Newtonsoft.Json;
 using System;
-using System.Linq;
-using ECommons;
-using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
@@ -32,6 +31,9 @@ namespace KDrawScript.Dev
 
         // [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
+
+        [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
+        public bool SpecialText { get; set; } = false;
 
         public enum PartyEnum
         {
@@ -218,9 +220,18 @@ namespace KDrawScript.Dev
                 dp.Rotation = float.Pi;
             }
 
+            Task.Delay(6000).ContinueWith(t =>
+            {
+                if (Embrace == "Backward")
+                    SendText("向前走", accessory);
+                else
+                    SendText("向后走", accessory);
+            }
+            );
+
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
-        
+
         [ScriptMethod(name: "Endeath 吸引提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40515|40531)$"])]
         public void Endeath(Event @event, ScriptAccessory accessory)
         {
@@ -450,6 +461,17 @@ namespace KDrawScript.Dev
 
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     }
+
+                    if (SpecialText)
+                        Task.Delay(5000).ContinueWith(t =>
+                        {
+                            if (!HaveLoomingChaos)
+                                SendText("左侧分摊", accessory);
+                            else
+                                SendText("北侧分摊", accessory);
+                        }
+                        );
+
                     break;
                 case "00F2":
                     dp.Scale = new(5, 22);
@@ -462,6 +484,14 @@ namespace KDrawScript.Dev
                         dp.Name += $" - {i}";
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
                     }
+
+                    if (SpecialText)
+                        Task.Delay(5000).ContinueWith(t =>
+                        {
+                            SendText("左起第二分散", accessory);
+                        }
+                        );
+
                     break;
             }
         }
@@ -504,6 +534,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Evil Seed Tether 拉线站位", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"])]
         public void EvilSeedTether(Event @event, ScriptAccessory accessory)
         {
+            if (SpecialText) SendText("右上接种子", accessory);
             if (!EnableGuidance) return;
             if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
@@ -530,6 +561,9 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Particle Concentration 踩塔指引", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40472"])]
         public void ParticleConcentration(Event @event, ScriptAccessory accessory)
         {
+            if (SpecialText)
+                if (!HaveLoomingChaos) SendText("左/上踩塔", accessory);
+                else SendText("右/下踩塔", accessory);
             if (!EnableGuidance) return;
             if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
             if (HaveLoomingChaos) return; // No support after position swap
@@ -595,7 +629,7 @@ namespace KDrawScript.Dev
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            
+
             var dp = accessory.Data.GetDefaultDrawProperties();
             var rot = -float.Pi / 2;
             dp.Color = accessory.Data.DefaultDangerColor;
