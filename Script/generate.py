@@ -7,7 +7,7 @@ OUTPUT = 'Repo.json'
 LINK = "https://raw.githubusercontent.com/DueDine/KDrawScript/main/"
 
 pattern = re.compile(
-    r'\[ScriptType\(name: "(.*?)", territorys: \[(.*?)\], guid: "(.*?)", version: "(.*?)", author: "(.*?)"\)\]'
+    r'\[ScriptType\(name: "(.*?)", territorys: \[(.*?)\], guid: "(.*?)", version: "(.*?)", author: "(.*?)".*\)\]'
 )
 
 def parse(folder):

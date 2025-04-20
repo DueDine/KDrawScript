@@ -12,9 +12,16 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.3", author: "Due")]
+    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.4", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
+        private const string NoteStr =
+        """
+        当前仅有基础绘制。
+        仅有计划做 A/C 队 D2 - 4 指路 （即固定换到对方平台组）
+        若发生问题请携ARR反馈。
+        """;
+
         private string Embrace = string.Empty;
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
@@ -585,6 +592,12 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 10000;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        [ScriptMethod(name: "Chaos Condensed Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40461"])]
+        public void ChaosCondensedParticleBeam(Event @event, ScriptAccessory accessory)
+        {
+            SendText("大云直线分摊", accessory);
         }
         /* Conflict with in-game notice
         [ScriptMethod(name: "Phaser Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4049[56])$"])]
