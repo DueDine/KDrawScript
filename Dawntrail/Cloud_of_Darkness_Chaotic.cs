@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "The Cloud of Darkness (Chaotic)", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.4", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.5", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -42,6 +42,9 @@ namespace KDrawScript.Dev
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
         public bool SpecialText { get; set; } = false;
 
+        [UserSetting(note: "激活密钥")]
+        public string Key { get; set; } = string.Empty;
+
         public enum PartyEnum
         {
             None = -1,
@@ -57,6 +60,7 @@ namespace KDrawScript.Dev
             HaveLoomingChaos = false;
             SeedTarget.Clear();
             accessory.Method.RemoveDraw(".*");
+            if (Key != "Dawntrail") DisableGuide();
         }
         #region P1
         [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
@@ -712,6 +716,12 @@ namespace KDrawScript.Dev
                 }
             }
             return -1;
+        }
+
+        private void DisableGuide()
+        {
+            SpecialText = false;
+            EnableGuidance = false;
         }
 
         #endregion
