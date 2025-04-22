@@ -39,6 +39,9 @@ namespace KDrawScript.Dev
         // [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
 
+        [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳")]
+        public bool UseAction { get; set; } = false;
+
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
         public bool SpecialText { get; set; } = false;
 
@@ -227,18 +230,17 @@ namespace KDrawScript.Dev
             dp.DestoryAt = 9000;
 
             if (Embrace == "Backward")
-            {
                 dp.Rotation = float.Pi;
-            }
 
-            Task.Delay(6000).ContinueWith(t =>
-            {
-                if (Embrace == "Backward")
-                    SendText("向前走", accessory);
-                else
-                    SendText("向后走", accessory);
-            }
-            );
+            if (SpecialText)
+                Task.Delay(6000).ContinueWith(t =>
+                {
+                    if (Embrace == "Backward")
+                        SendText("向前走", accessory);
+                    else
+                        SendText("向后走", accessory);
+                }
+                );
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
@@ -270,7 +272,7 @@ namespace KDrawScript.Dev
             {
                 SendText("准备击退", accessory);
             }
-
+            if (UseAction) AutoSCAL(accessory);
             DelayWhat = string.Empty;
         }
 
@@ -314,6 +316,14 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     break;
             }
+
+            dp.Name = "Enaero - Knockback";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Position = new(0, 0, 0);
+            dp.TargetObject = accessory.Data.Me;
+            dp.Scale = new(2, 10);
+
+            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Endeath AOE", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[01]|4051[78])$"])]
@@ -359,12 +369,32 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
                     break;
             }
+
+            dp.Name = "Endeath - Attract";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Owner = accessory.Data.Me;
+            dp.TargetPosition = new(0, 0, 0);
+            dp.Scale = new(2, 10);
+
+            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
-        [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40527"])]
+        [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[79])$"])]
         public void BreakIV(Event @event, ScriptAccessory accessory)
         {
             SendText("背对", accessory);
+
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = $"Break IV - {sid}";
+            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Scale = new(2);
+            dp.Owner = sid;
+            dp.TargetObject = accessory.Data.Me;
+            dp.DestoryAt = 4000;
+
+            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
         #endregion
         #region P2
@@ -601,7 +631,7 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "Chaos Condensed Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40461"])]
         public void ChaosCondensedParticleBeam(Event @event, ScriptAccessory accessory)
         {
-            SendText("大云直线分摊", accessory);
+            SendText("大云直线挡枪分摊", accessory);
         }
         /* Conflict with in-game notice
         [ScriptMethod(name: "Phaser Text", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4049[56])$"])]
@@ -666,7 +696,7 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41673"], userControl: false)]
+        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:41673"], userControl: false)]
         public void LoomingChaos(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
 
         #endregion
@@ -722,6 +752,19 @@ namespace KDrawScript.Dev
         {
             SpecialText = false;
             EnableGuidance = false;
+            UseAction = false;
+        }
+
+        private void AutoSCAL(ScriptAccessory accessory)
+        {
+            // Sure Cast 7559 Arm's Length 7548
+            var JobId = accessory.Data.MyObject.ClassJob.Value.ClassJobCategory.RowId;
+            // 30 War 31 Magic
+            accessory.Log.Debug($"Job: {accessory.Data.MyObject.ClassJob.Value.Name} Trigger");
+            if (JobId == 0) return;
+            if (JobId == 30) accessory.Method.UseAction(0xE000_0000, 7548);
+            else if (JobId == 31) accessory.Method.UseAction(0xE000_0000, 7559);
+            else return;
         }
 
         #endregion
