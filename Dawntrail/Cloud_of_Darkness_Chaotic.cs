@@ -1,6 +1,7 @@
 ﻿using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using KodakkuAssist.Extensions;
 using KodakkuAssist.Module.Draw;
 using KodakkuAssist.Module.GameEvent;
 using KodakkuAssist.Script;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.5", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.6", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -25,7 +26,7 @@ namespace KDrawScript.Dev
         private string Embrace = string.Empty;
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
-        private readonly List<Vector3> FlarePoint = [];
+        private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new (126, 0 , 76)];
         private readonly List<Vector3> SeedPoint = []; // Only A, C Party Each have two points
         private readonly List<Vector3> TetherPoint = []; // Only A, C Party Each have four points
         private readonly List<uint> SeedTarget = [];
@@ -33,20 +34,17 @@ namespace KDrawScript.Dev
         [UserSetting(note: "是否开启文字提醒")]
         public bool EnableTextInfo { get; set; } = true;
 
-        // [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
-        public bool EnableGuidance { get; set; } = false;
+        [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
+        public bool EnableGuidance { get; set; } = true;
 
-        // [UserSetting(note: "请选择你的队伍。")]
-        public PartyEnum Party { get; set; } = PartyEnum.None;
+        [UserSetting(note: "请选择你的队伍。")]
+        public PartyEnum Party { get; set; } = PartyEnum.C;
 
         [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳")]
         public bool UseAction { get; set; } = false;
 
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
         public bool SpecialText { get; set; } = false;
-
-        [UserSetting(note: "激活密钥")]
-        public string Key { get; set; } = string.Empty;
 
         public enum PartyEnum
         {
@@ -63,7 +61,6 @@ namespace KDrawScript.Dev
             HaveLoomingChaos = false;
             SeedTarget.Clear();
             accessory.Method.RemoveDraw(".*");
-            if (Key != "Dawntrail") DisableGuide();
         }
         #region P1
         [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
@@ -182,14 +179,13 @@ namespace KDrawScript.Dev
                 PartyEnum.C => 2,
                 _ => -1
             };
-            if (index == -1) index = InWhichParty(accessory, tid);
             if (index == -1) return;
 
             dp.Name = $"Flare Guide";
             dp.Color = accessory.Data.DefaultSafeColor;
-            dp.Scale = new(2);
+            dp.Scale = new(1.5f);
             dp.Owner = accessory.Data.Me;
-            dp.DestoryAt = 5000;
+            dp.DestoryAt = 5500;
             dp.ScaleMode |= ScaleMode.YByDistance;
             dp.TargetPosition = FlarePoint[index];
 
@@ -227,20 +223,10 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(8, 8);
             dp.Owner = tid;
-            dp.DestoryAt = 9000;
+            dp.DestoryAt = 8000;
 
             if (Embrace == "Backward")
                 dp.Rotation = float.Pi;
-
-            if (SpecialText)
-                Task.Delay(6000).ContinueWith(t =>
-                {
-                    if (Embrace == "Backward")
-                        SendText("向前走", accessory);
-                    else
-                        SendText("向后走", accessory);
-                }
-                );
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
         }
@@ -317,13 +303,15 @@ namespace KDrawScript.Dev
                     break;
             }
 
+            if (HaveMitigation(accessory)) return;
             dp.Name = "Enaero - Knockback";
             dp.Color = accessory.Data.DefaultSafeColor;
-            dp.Position = new(0, 0, 0);
+            dp.Position = new(100, 0, 75);
             dp.TargetObject = accessory.Data.Me;
-            dp.Scale = new(2, 10);
+            dp.Scale = new(1.5f, 21);
+            dp.DestoryAt = 2000;
 
-            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Endeath AOE", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[01]|4051[78])$"])]
@@ -352,7 +340,7 @@ namespace KDrawScript.Dev
                     dp.Radian = float.Pi * 2;
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
-                    break;
+                    return;
                 case "40517":
                     dp.Scale = new(6);
                     dp.DestoryAt = 4000;
@@ -367,16 +355,18 @@ namespace KDrawScript.Dev
                     dp.Radian = float.Pi * 2;
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
-                    break;
+                    return;
             }
 
+            if (HaveMitigation(accessory)) return;
             dp.Name = "Endeath - Attract";
             dp.Color = accessory.Data.DefaultSafeColor;
             dp.Owner = accessory.Data.Me;
-            dp.TargetPosition = new(0, 0, 0);
-            dp.Scale = new(2, 10);
+            dp.TargetPosition = new(100, 0, 75);
+            dp.Scale = new(1.5f, 21);
+            dp.DestoryAt = 2000;
 
-            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[79])$"])]
@@ -389,12 +379,12 @@ namespace KDrawScript.Dev
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = $"Break IV - {sid}";
             dp.Color = accessory.Data.DefaultDangerColor;
-            dp.Scale = new(2);
+            dp.Scale = new(1);
             dp.Owner = sid;
             dp.TargetObject = accessory.Data.Me;
             dp.DestoryAt = 4000;
 
-            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
         #endregion
         #region P2
@@ -760,11 +750,15 @@ namespace KDrawScript.Dev
             // Sure Cast 7559 Arm's Length 7548
             var JobId = accessory.Data.MyObject.ClassJob.Value.ClassJobCategory.RowId;
             // 30 War 31 Magic
-            accessory.Log.Debug($"Job: {accessory.Data.MyObject.ClassJob.Value.Name} Trigger");
             if (JobId == 0) return;
             if (JobId == 30) accessory.Method.UseAction(0xE000_0000, 7548);
             else if (JobId == 31) accessory.Method.UseAction(0xE000_0000, 7559);
             else return;
+        }
+
+        private bool HaveMitigation(ScriptAccessory accessory)
+        {
+            return accessory.Data.MyObject.HasStatusAny(new uint[] { 160, 1209 });
         }
 
         #endregion
