@@ -1,4 +1,5 @@
 ﻿using ECommons;
+using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using KodakkuAssist.Extensions;
@@ -27,8 +28,14 @@ namespace KDrawScript.Dev
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
         private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new (126, 0 , 76)];
-        private readonly List<Vector3> SeedPoint = []; // Only A, C Party Each have two points
-        private readonly List<Vector3> TetherPoint = []; // Only A, C Party Each have four points
+        private readonly List<Vector3> SeedPoint = [new(0, 0, 0), new(70, 0, 92), new(70, 0, 107), new(130, 0, 108), new(130, 0, 92)]; // Only A, C Party Each have two points
+        private readonly Object SeedLock = new();
+        private readonly List<Vector3> TetherPointA = [new(67, 0, 93), new(80, 0, 95), new(80, 0, 104), new(67, 0, 106)];
+        private readonly List<Vector3> TetherPointC = [new(133, 0, 106), new(119, 0, 103), new(119, 0, 95), new(132, 0, 94)];
+        private readonly List<Vector3> SpreadPointC = [new(126.89f, 0, 94.59f), new(129.41f, 0, 95.50f), new(131.86f, 0, 97.56f), new(131.69f, 0, 102.13f), new(130.01f, 0, 105.10f), new(125.94f, 0, 105.83f)];
+        private readonly List<Vector3> SpreadPointA = [new(73.57f, 0, 105.46f), new(70.24f, 0, 105.06f), new(68.16f, 0, 103.41f), new(68.50f, 0, 98.08f), new(70.24f, 0, 96.12f), new(73.31f, 0, 96.32f)];
+        private readonly Vector3 CenterC = new(126.50f, 0, 100);
+        private readonly Vector3 CenterA = new(73.50f, 0, 100);
         private readonly List<uint> SeedTarget = [];
 
         [UserSetting(note: "是否开启文字提醒")]
@@ -440,7 +447,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(25);
             dp.Owner = tid;
-            dp.Radian = float.Pi * 0.09f;
+            dp.Radian = 7.5f.DegToRad();
             dp.Delay = int.Parse(@event["DurationMilliseconds"]) - 5000;
             dp.DestoryAt = 5500;
 
@@ -467,9 +474,10 @@ namespace KDrawScript.Dev
             dp.Name = $"Third Art Of Darkness - {tid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Owner = tid;
-            dp.Delay = 5000;
-            dp.DestoryAt = 5000;
+            dp.Delay = 6000;
+            dp.DestoryAt = 4000;
 
+            var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
             switch (@event["Id"])
             {
                 case "00EF":
@@ -501,15 +509,30 @@ namespace KDrawScript.Dev
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     }
 
-                    if (SpecialText)
-                        Task.Delay(5000).ContinueWith(t =>
-                        {
-                            if (!HaveLoomingChaos)
-                                SendText("左侧分摊", accessory);
-                            else
-                                SendText("北侧分摊", accessory);
-                        }
-                        );
+                    if (!EnableGuidance) return;
+                    if (HaveLoomingChaos) return;
+                    dp.Name = $"Third Art Of Darkness - {index}";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Scale = new(1.5f);
+                    dp.Owner = accessory.Data.Me;
+                    dp.DestoryAt = 4000;
+                    dp.ScaleMode |= ScaleMode.YByDistance;
+                    if (Party == PartyEnum.A)
+                    {
+                        dp.Position = CenterA;
+                        if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 3, CenterA.Y, CenterA.Z);
+                        else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, 0, CenterA.Z + 3);
+                        else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 3);
+                    }
+                    else if (Party == PartyEnum.C)
+                    {
+                        dp.Position = CenterC;
+                        if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 3, CenterC.Y, CenterC.Z);
+                        else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, 0, CenterC.Z - 3);
+                        else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 3);
+                    }
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
 
                     break;
                 case "00F2":
@@ -524,12 +547,22 @@ namespace KDrawScript.Dev
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
                     }
 
-                    if (SpecialText)
-                        Task.Delay(5000).ContinueWith(t =>
-                        {
-                            SendText("左起第二分散", accessory);
-                        }
-                        );
+                    if (!EnableGuidance) return;
+                    var priority = new int[] { 2, -1, -1, 3, 0, 1, 4, 5 };
+                    if (priority[index] != -1)
+                    {
+                        dp.Name = $"Third Art Of Darkness - {priority[index]}";
+                        dp.Color = accessory.Data.DefaultSafeColor;
+                        dp.Scale = new(1.5f);
+                        dp.Owner = accessory.Data.Me;
+                        dp.DestoryAt = 4000;
+                        dp.ScaleMode |= ScaleMode.YByDistance;
+                        if (Party == PartyEnum.A)
+                            dp.TargetPosition = SpreadPointA[priority[index]];
+                        else if (Party == PartyEnum.C)
+                            dp.TargetPosition = SpreadPointC[priority[index]];
+                        accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                    }
 
                     break;
             }
@@ -551,23 +584,26 @@ namespace KDrawScript.Dev
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
 
             if (!EnableGuidance) return;
-            if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
-            if (IsInSameParty(accessory, tid)) SeedTarget.Add(tid); // Me included of course
-            if (SeedTarget.Count != 2) return;
-            if (!SeedTarget.Contains(accessory.Data.Me)) return; // Not in the list
-            var myIndex = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
-            var otherIndex = accessory.Data.PartyList.IndexOf(SeedTarget.First(x => x != accessory.Data.Me));
-            var offset = (int)Party + (myIndex < otherIndex ? 1 : 2); // A, C Party Index at 1, 2, 3, 4
+            lock (SeedLock)
+            {
+                if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
+                if (IsInSameParty(accessory, tid)) SeedTarget.Add(tid); // Me included of course
+                if (SeedTarget.Count != 2) return;
+                if (!SeedTarget.Contains(accessory.Data.Me)) return; // Not in the list
+                var myIndex = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+                var otherIndex = accessory.Data.PartyList.IndexOf(SeedTarget.First(x => x != accessory.Data.Me));
+                var offset = (int)Party + (myIndex < otherIndex ? 1 : 2); // A, C Party Index at 1, 2, 3, 4
 
-            dp.Name = $"Evil Seed Guide";
-            dp.Color = accessory.Data.DefaultSafeColor;
-            dp.Scale = new(2);
-            dp.Owner = accessory.Data.Me;
-            dp.DestoryAt = 8000;
-            dp.ScaleMode |= ScaleMode.YByDistance;
-            dp.TargetPosition = SeedPoint[offset];
+                dp.Name = $"Evil Seed Guide";
+                dp.Color = accessory.Data.DefaultSafeColor;
+                dp.Scale = new(1.5f);
+                dp.Owner = accessory.Data.Me;
+                dp.DestoryAt = 8000;
+                dp.ScaleMode |= ScaleMode.YByDistance;
+                dp.TargetPosition = SeedPoint[offset];
 
-            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            }
         }
 
         [ScriptMethod(name: "Evil Seed Tether 拉线站位", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"])]
@@ -576,13 +612,11 @@ namespace KDrawScript.Dev
             if (SpecialText) SendText("右上接种子", accessory);
             if (!EnableGuidance) return;
             if (Party == PartyEnum.None || Party == PartyEnum.B) return; // No support for B Party
-            if (!ParseObjectId(@event["TargetId"], out var tid)) return;
-            if (tid != accessory.Data.Me) return;
             var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
             if (index == 1 || index == 2) return; // ST and H1 inner platform
 
-            var priority = new int[] { -1, -1, -1, 1, -1, 2, 3, 4 };
-            var offset = (int)Party + priority[index];
+            var priority = new int[] { -1, -1, -1, 0, -1, 1, 2, 3 };
+            if (priority[index] == -1) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
 
@@ -592,7 +626,10 @@ namespace KDrawScript.Dev
             dp.Owner = accessory.Data.Me;
             dp.DestoryAt = 8000;
             dp.ScaleMode |= ScaleMode.YByDistance;
-            dp.TargetPosition = TetherPoint[offset];
+            if (Party == PartyEnum.A)
+                dp.TargetPosition = TetherPointA[priority[index]];
+            else if (Party == PartyEnum.C)
+                dp.TargetPosition = TetherPointC[priority[index]];
 
             accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
@@ -657,7 +694,7 @@ namespace KDrawScript.Dev
             dp.Owner = sid;
             dp.Delay = 6000;
             dp.DestoryAt = 3000;
-            dp.Radian = float.Pi * 0.3f;
+            dp.Radian = 30f.DegToRad(); // Need more testing
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -670,7 +707,7 @@ namespace KDrawScript.Dev
             accessory.Method.RemoveDraw($"Phaser AOE - {sid}");
         }
 
-        [ScriptMethod(name: "Active Pivot Particle Beam 90度前后炮(实验版)", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"])]
+        [ScriptMethod(name: "Active Pivot Particle Beam 90度前后炮", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"])]
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
