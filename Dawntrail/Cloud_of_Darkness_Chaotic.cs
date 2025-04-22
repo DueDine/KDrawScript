@@ -377,7 +377,7 @@ namespace KDrawScript.Dev
                     dp.Color = accessory.Data.DefaultSafeColor;
                     dp.Position = new(100, 0, 75);
                     dp.TargetObject = accessory.Data.Me;
-                    dp.Scale = new(1.5f, 21);
+                    dp.Scale = new(1.5f, 15);
                     dp.DestoryAt = 2000;
 
                     accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
