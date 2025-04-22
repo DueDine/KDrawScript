@@ -35,10 +35,10 @@ namespace KDrawScript.Dev
         public bool EnableTextInfo { get; set; } = true;
 
         [UserSetting(note: "是否开启额外提示。请确保小队排序正确。")]
-        public bool EnableGuidance { get; set; } = true;
+        public bool EnableGuidance { get; set; } = false;
 
         [UserSetting(note: "请选择你的队伍。")]
-        public PartyEnum Party { get; set; } = PartyEnum.C;
+        public PartyEnum Party { get; set; } = PartyEnum.None;
 
         [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳")]
         public bool UseAction { get; set; } = false;
