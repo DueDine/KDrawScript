@@ -370,13 +370,19 @@ namespace KDrawScript.Dev
                     return;
             }
 
-            if (HaveMitigation(accessory)) return;
-            dp.Name = "Endeath - Attract";
-            dp.Color = accessory.Data.DefaultSafeColor;
-            dp.Owner = accessory.Data.Me;
-            dp.TargetPosition = new(100, 0, 75);
-            dp.Scale = new(1.5f, 21);
-            dp.DestoryAt = 2000;
+            Task.Delay(200).ContinueWith(t =>
+                {
+                    if (HaveMitigation(accessory)) return;
+                    dp.Name = "Enaero - Knockback";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Position = new(100, 0, 75);
+                    dp.TargetObject = accessory.Data.Me;
+                    dp.Scale = new(1.5f, 21);
+                    dp.DestoryAt = 2000;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                }
+            );
 
             accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
