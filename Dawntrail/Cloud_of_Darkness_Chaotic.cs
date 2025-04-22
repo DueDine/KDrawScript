@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KodakkuAssist.Module.Draw.Manager;
 
 namespace KDrawScript.Dev
 {
@@ -63,6 +64,13 @@ namespace KDrawScript.Dev
             accessory.Method.RemoveDraw(".*");
         }
         #region P1
+        
+        [ScriptMethod(name: "---- Phase Diamond ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: true)]
+        public void SplitLine_Phase2(Event ev, ScriptAccessory sa)
+        {
+        }
+        
         [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
         public void BladeofDarkness(Event @event, ScriptAccessory accessory)
         {
@@ -302,19 +310,19 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     break;
             }
-
+            
             Task.Delay(200).ContinueWith(t =>
-            {
-                if (HaveMitigation(accessory)) return;
-                dp.Name = "Enaero - Knockback";
-                dp.Color = accessory.Data.DefaultSafeColor;
-                dp.Position = new(100, 0, 75);
-                dp.TargetObject = accessory.Data.Me;
-                dp.Scale = new(1.5f, 21);
-                dp.DestoryAt = 2000;
+                {
+                    if (HaveMitigation(accessory)) return;
+                    dp.Name = "Enaero - Knockback";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Position = new(100, 0, 75);
+                    dp.TargetObject = accessory.Data.Me;
+                    dp.Scale = new(1.5f, 21);
+                    dp.DestoryAt = 2000;
 
-                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
-            }
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                }
             );
         }
 
@@ -362,41 +370,125 @@ namespace KDrawScript.Dev
                     return;
             }
 
-            Task.Delay(200).ContinueWith(t =>
-            {
-                if (HaveMitigation(accessory)) return;
-                dp.Name = "Endeath - Attract";
-                dp.Color = accessory.Data.DefaultSafeColor;
-                dp.Owner = accessory.Data.Me;
-                dp.TargetPosition = new(100, 0, 75);
-                dp.Scale = new(1.5f, 15);
-                dp.DestoryAt = 2000;
+            if (HaveMitigation(accessory)) return;
+            dp.Name = "Endeath - Attract";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Owner = accessory.Data.Me;
+            dp.TargetPosition = new(100, 0, 75);
+            dp.Scale = new(1.5f, 21);
+            dp.DestoryAt = 2000;
 
-                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
-            }
-            );
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[79])$"])]
         public void BreakIV(Event @event, ScriptAccessory accessory)
         {
             SendText("背对", accessory);
-
-            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-
+            // if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            //
+            // var dp = accessory.Data.GetDefaultDrawProperties();
+            // dp.Name = $"Break IV - {sid}";
+            // dp.Color = accessory.Data.DefaultDangerColor;
+            // dp.Scale = new(1);
+            // dp.Owner = sid;
+            // dp.TargetObject = accessory.Data.Me;
+            // dp.DestoryAt = 4000;
+            //
+            // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            
+            var sid = @event.SourceId;
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = $"Break IV - {sid}";
+            dp.Name = "BreakEye";
             dp.Color = accessory.Data.DefaultDangerColor;
-            dp.Scale = new(1.5f, 5);
             dp.Owner = accessory.Data.Me;
             dp.TargetObject = sid;
+            dp.Delay = 0;
             dp.DestoryAt = 4000;
-
-            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            
+            accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.SightAvoid, dp);
         }
         #endregion
         #region P2
+        
+        [ScriptMethod(name: "---- Phase Tilt ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: true)]
+        public void SplitLine_Phase3(Event ev, ScriptAccessory sa)
+        {
+        }
+        
+        [ScriptMethod(name: "初始位置", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
+        userControl: true)]
+        public void P3InitField(Event ev, ScriptAccessory sa)
+        {
+            var myMemberIdx = GetMemberIdx(sa);
+            if (myMemberIdx == -1)
+            {
+                sa.Log.Debug($"获得MemberIdx错误，可能该目标非我队队员");
+                return;
+            }
+            
+            Vector3 safePos = myMemberIdx switch
+            {
+                10 => GetBlockField(7, 3),  // B-MT
+                11 => GetBlockField(7, 6),  // B-ST
+                12 => GetBlockField(6, 2),  // B-H1
+                13 => GetBlockField(6, 7),  // B-H2
+                14 => GetBlockField(3, 2),  // B-D1
+                15 => GetBlockField(3, 7),  // B-D2
+                16 => GetBlockField(8, 2),  // B-D3
+                17 => GetBlockField(8, 7),  // B-D4
+                
+                2 => GetBlockField(1, 2),   // A-H1
+                1 => GetBlockField(2, 3),   // A-ST
+                22 => GetBlockField(1, 7),  // C-H1
+                21 => GetBlockField(2, 6),  // C-ST
+                _ => new Vector3(0, 0, 0),
+            };
 
+            if (safePos != new Vector3(0, 0, 0))
+            {
+                var dp0 = sa.Data.GetDefaultDrawProperties();
+                dp0.Name = $"方格{myMemberIdx}";
+                dp0.Scale = new Vector2(6, 6);
+                dp0.Position = safePos;
+                dp0.Delay = 0;
+                dp0.DestoryAt = 7500;
+                dp0.Color = sa.Data.DefaultSafeColor;
+                sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp0);
+            }
+            
+            else
+            {
+                safePos = (myMemberIdx / 10) switch
+                {
+                    0 => new Vector3(73.5f, 0, 100f),
+                    2 => new Vector3(126.5f, 0, 100f),
+                    _ => new Vector3(0, 0, 0),
+                };
+            }
+            
+            if (safePos == new Vector3(0, 0, 0)) return;
+
+            var dp = DrawGuidance(sa, safePos, 0, 7500, "初始位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            sa.Log.Debug($"获得{myMemberIdx}的初始位置{safePos}");
+        }
+        
+        private int GetMemberIdx(ScriptAccessory sa)
+        {
+            var myParty = Party switch
+            {
+                PartyEnum.A => 0,
+                PartyEnum.B => 10,
+                PartyEnum.C => 20,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            var myIndex = sa.Data.PartyList.IndexOf(sa.Data.Me);
+            if (myIndex == -1) return -1;
+            return myParty + myIndex;
+        }
+    
         [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
         public void GhastlyGloom(Event @event, ScriptAccessory accessory)
         {
@@ -768,6 +860,78 @@ namespace KDrawScript.Dev
         {
             return accessory.Data.MyObject.HasStatusAny(new uint[] { 160, 1209 });
         }
+        
+        /// <summary>
+        /// 获得P3场地第row排第col列的中心坐标
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        private Vector3 GetBlockField(int row, int col)
+        {
+            Vector3 centerTriple = new(100, 0, 100);
+            return centerTriple + new Vector3(6 * (col - 4) - 3, 0, 6 * (row - 4) - 3);
+        }
+        
+        /// <summary>
+        /// 返回箭头指引相关dp
+        /// </summary>
+        /// <param name="accessory"></param>
+        /// <param name="ownerObj">箭头起始，可输入uint或Vector3</param>
+        /// <param name="targetObj">箭头指向目标，可输入uint或Vector3，为0则无目标</param>
+        /// <param name="delay">绘图出现延时</param>
+        /// <param name="destroy">绘图消失时间</param>
+        /// <param name="name">绘图名称</param>
+        /// <param name="rotation">箭头旋转角度</param>
+        /// <param name="scale">箭头宽度</param>
+        /// <param name="isSafe">使用安全色</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static DrawPropertiesEdit DrawGuidance(ScriptAccessory accessory,
+            object ownerObj, object targetObj, int delay, int destroy, string name, float rotation = 0, float scale = 1f, bool isSafe = true)
+        {
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = name;
+            dp.Scale = new Vector2(scale);
+            dp.Rotation = rotation;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.Color = isSafe ? accessory.Data.DefaultSafeColor : accessory.Data.DefaultDangerColor;
+            dp.Delay = delay;
+            dp.DestoryAt = destroy;
+
+            if (ownerObj is uint or ulong)
+            {
+                dp.Owner = (ulong)ownerObj;
+            }
+            else if (ownerObj is Vector3 spos)
+            {
+                dp.Position = spos;
+            }
+            else
+            {
+                throw new ArgumentException("ownerObj的目标类型输入错误");
+            }
+
+            if (targetObj is uint or ulong)
+            {
+                if ((ulong)targetObj != 0) dp.TargetObject = (ulong)targetObj;
+            }
+            else if (targetObj is Vector3 tpos)
+            {
+                dp.TargetPosition = tpos;
+            }
+            else
+            {
+                throw new ArgumentException("targetObj的目标类型输入错误");
+            }
+
+            return dp;
+        }
+        
+        public static DrawPropertiesEdit DrawGuidance(ScriptAccessory accessory,
+            object targetObj, int delay, int destroy, string name, float rotation = 0, float scale = 1f, bool isSafe = true)
+            => DrawGuidance(accessory, (ulong)accessory.Data.Me, targetObj, delay, destroy, name, rotation, scale, isSafe);
 
         #endregion
     }
