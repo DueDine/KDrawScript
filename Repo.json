@@ -1,33 +1,13 @@
 [
     {
-        "Name": "CoD (Chaotic) 暗黑之云诛灭战",
-        "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
-        "Version": "0.0.1.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            1241
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
-    },
-    {
-        "Name": "AAC Cruiserweight M1",
-        "Guid": "6376CF47-0403-459E-9350-D168AB9119B5",
+        "Name": "AAC Cruiserweight M2",
+        "Guid": "1EF7A8D1-1D46-4E4A-9051-CC392724CA18",
         "Version": "0.0.0.1",
         "Author": "Due",
         "TerritoryIds": [
-            1256
+            1258
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M1.cs"
-    },
-    {
-        "Name": "Jeuno The First Walk 朱诺：第一巡行",
-        "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
-        "Version": "0.0.0.7",
-        "Author": "Due",
-        "TerritoryIds": [
-            1248
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M2.cs"
     },
     {
         "Name": "AAC Cruiserweight M3",
@@ -40,14 +20,34 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
     },
     {
-        "Name": "AAC Cruiserweight M2",
-        "Guid": "1EF7A8D1-1D46-4E4A-9051-CC392724CA18",
+        "Name": "AAC Cruiserweight M1",
+        "Guid": "6376CF47-0403-459E-9350-D168AB9119B5",
         "Version": "0.0.0.1",
         "Author": "Due",
         "TerritoryIds": [
-            1258
+            1256
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M2.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M1.cs"
+    },
+    {
+        "Name": "CoD (Chaotic) 暗黑之云诛灭战",
+        "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
+        "Version": "0.0.1.2",
+        "Author": "Due",
+        "TerritoryIds": [
+            1241
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
+    },
+    {
+        "Name": "Jeuno The First Walk 朱诺：第一巡行",
+        "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
+        "Version": "0.0.0.7",
+        "Author": "Due",
+        "TerritoryIds": [
+            1248
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
         "Name": "AAC Cruiserweight M4",
@@ -90,16 +90,6 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Copied_Factory.cs"
     },
     {
-        "Name": "Alexander - The Cuff of the Son (A6)",
-        "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
-        "Version": "0.0.0.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            521
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
-    },
-    {
         "Name": "Alexander - The Fist of the Son (A5)",
         "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
@@ -118,5 +108,15 @@
             580
         ],
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
+    },
+    {
+        "Name": "Alexander - The Cuff of the Son (A6)",
+        "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            521
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
     }
 ]
