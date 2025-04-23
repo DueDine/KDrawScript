@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using KodakkuAssist.Module.Draw.Manager;
+using Dalamud.Utility.Numerics;
 
 namespace KDrawScript.Dev
 {
@@ -25,7 +26,7 @@ namespace KDrawScript.Dev
         若发生问题请携ARR反馈。
         """;
 
-        private string Embrace = string.Empty;
+        private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
         private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new (126, 0 , 76)];
@@ -38,6 +39,7 @@ namespace KDrawScript.Dev
         private readonly Vector3 CenterC = new(126.50f, 0, 100);
         private readonly Vector3 CenterA = new(73.50f, 0, 100);
         private readonly List<uint> SeedTarget = [];
+        private int RazingRecord = 0;
 
         [UserSetting(note: "是否开启文字提醒")]
         public bool EnableTextInfo { get; set; } = true;
@@ -48,7 +50,7 @@ namespace KDrawScript.Dev
         [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
 
-        [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳")]
+        [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳 以及 打断暗之泛滥")]
         public bool UseAction { get; set; } = false;
 
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
@@ -64,10 +66,11 @@ namespace KDrawScript.Dev
 
         public void Init(ScriptAccessory accessory)
         {
-            Embrace = string.Empty;
+            Embrace.Clear();
             DelayWhat = string.Empty;
             HaveLoomingChaos = false;
             SeedTarget.Clear();
+            RazingRecord = 0;
             accessory.Method.RemoveDraw(".*");
         }
         #region P1
@@ -129,10 +132,24 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(8, 45);
             dp.Owner = sid;
-            dp.Delay = 5000;
-            dp.DestoryAt = 3000;
+            if (RazingRecord < 2) dp.DestoryAt = 8000;
+            else
+            {
+                dp.Delay = 4000;
+                dp.DestoryAt = 4000;
+            }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Razing-volley Particle Beam 场外车轮激光", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40511"], suppress: 500)]
+        public void RazingvolleyParticleBeamRecord(Event @event, ScriptAccessory accessory)
+        {
+            Task.Delay(200).ContinueWith(t =>
+            {
+                if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+                RazingRecord++;
+            });
         }
 
         [ScriptMethod(name: "Razing-volley Particle Beam Cancel", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40511"], UserControl = false)]
@@ -178,7 +195,7 @@ namespace KDrawScript.Dev
             var dp = accessory.Data.GetDefaultDrawProperties();
 
             dp.Name = $"Flare AOE - {tid}";
-            dp.Color = accessory.Data.DefaultDangerColor;
+            dp.Color = accessory.Data.DefaultDangerColor.WithW(0.4f);
             dp.Scale = new(25);
             dp.Owner = tid;
             dp.Delay = 1500;
@@ -211,39 +228,54 @@ namespace KDrawScript.Dev
         public void GrimEmbrace(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            if (sid != accessory.Data.Me) return;
 
             switch (@event["Id"])
             {
                 case "012C":
-                    Embrace = "Forward";
+                    Embrace.Add((sid, "Forward"));
                     SendText("存储前方", accessory);
                     break;
                 case "012D":
-                    Embrace = "Backward";
+                    Embrace.Add((sid, "Backward"));
                     SendText("存储后方", accessory);
                     break;
             }
         }
 
-        [ScriptMethod(name: "Embrace AOE 放手前后绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0228"])]
+        [ScriptMethod(name: "Embrace AOE 放手前后绘制", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:4181"])]
         public void EmbraceAOE(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["TargetId"], out var tid)) return;
-            if (tid != accessory.Data.Me) return;
-            if (string.IsNullOrEmpty(Embrace)) return;
+            if (Embrace.Count == 0) return;
+            var embrace = Embrace.FirstOrDefault(x => x.Item1 == tid);
+            if (string.IsNullOrEmpty(embrace.Item2)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
-            dp.Name = "Embrace AOE";
+            dp.Name = $"Embrace AOE - {tid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(8, 8);
             dp.Owner = tid;
+            dp.Delay = int.Parse(@event["DurationMilliseconds"]) - 7000;
             dp.DestoryAt = 7000;
+            
+            if (tid != accessory.Data.Me)
+            {
+                dp.Delay = int.Parse(@event["DurationMilliseconds"]) - 3000;
+                dp.DestoryAt = 3000;
+            }
 
-            if (Embrace == "Backward")
+            if (embrace.Item2 == "Backward")
                 dp.Rotation = float.Pi;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
+        }
+
+        [ScriptMethod(name: "Embrace AOE 放手前后绘制", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:4181"])]
+        public void EmbraceAOECancel(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["TargetId"], out var tid)) return;
+            accessory.Method.RemoveDraw($"Embrace AOE - {tid}");
+            Embrace.RemoveAll(x => x.Item1 == tid);
         }
 
         [ScriptMethod(name: "Endeath 吸引提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40515|40531)$"])]
@@ -774,6 +806,19 @@ namespace KDrawScript.Dev
             if (index == 1 || index == 2) return; // ST and H1 inner platform
         }
 
+        [ScriptMethod(name: "Flood of Darkness 暗之泛滥", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40503"])]
+        public void FloodOfDarkness(Event @event, ScriptAccessory accessory)
+        {
+            if (!UseAction) return;
+            if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            if (!IsInSameSide(accessory, sid)) return;
+            if (Party == PartyEnum.None || Party == PartyEnum.B) return;
+
+            var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+            if (index != 0 || index != 6) return;
+            AutoInterrupt(accessory, sid);
+        }
+
         [ScriptMethod(name: "Diffusive Force Particle Beam 分散点名绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40464"])]
         public void DiffusiveForceParticleBeam(Event @event, ScriptAccessory accessory)
         {
@@ -857,8 +902,11 @@ namespace KDrawScript.Dev
             }
         }
 
+        [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:41673"])]
+        public void LoomingChaos(Event @event, ScriptAccessory accessory) => SendText("准备换位", accessory);
+
         [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:41673"], userControl: false)]
-        public void LoomingChaos(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
+        public void LoomingChaosMark(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
 
         #endregion
 
@@ -932,11 +980,24 @@ namespace KDrawScript.Dev
             return accessory.Data.MyObject.HasStatusAny(new uint[] { 160, 1209 });
         }
 
+        private void AutoInterrupt(ScriptAccessory accessory, uint target)
+        {
+            // Head Graze 7551 Ranged Interject 7538 Tank
+            var JobId = accessory.Data.MyObject.ClassJob.RowId;
+            if (JobId == 0) return;
+
+            var RangedId = new List<uint> { 31, 23, 38 };
+            var TankId = new List<uint> { 19, 21, 32, 37 };
+            if (RangedId.Contains(JobId)) accessory.Method.UseAction(target, 7551);
+            else if (TankId.Contains(JobId)) accessory.Method.UseAction(target, 7538);
+            else return;
+        }
+
         private bool IsInSameSide(ScriptAccessory accessory, ulong tid)
         {
             var myPosition = accessory.Data.MyObject.Position;
             var targetPosition = accessory.Data.Objects.SearchById(tid).Position;
-            var threshold = 5;
+            var threshold = 10;
             return Vector3.Distance(myPosition, targetPosition) < threshold;
         }
         
