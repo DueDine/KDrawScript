@@ -16,7 +16,7 @@ using Dalamud.Utility.Numerics;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.1", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.2", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -158,7 +158,7 @@ namespace KDrawScript.Dev
         public void RazingvolleyParticleBeamCancel(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-
+            if (RazingRecord >= 4) RazingRecord = 0;
             accessory.Method.RemoveDraw($"Razing-volley Particle Beam - {sid}");
         }
 
@@ -888,7 +888,7 @@ namespace KDrawScript.Dev
         public void PhaserAOECancel(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-
+            if (EverDrawPhaser) EverDrawPhaser = false;
             accessory.Method.RemoveDraw($"Phaser AOE - {sid}");
         }
 
