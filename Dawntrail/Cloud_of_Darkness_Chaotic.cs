@@ -40,6 +40,7 @@ namespace KDrawScript.Dev
         private readonly Vector3 CenterA = new(73.50f, 0, 100);
         private readonly List<uint> SeedTarget = [];
         private int RazingRecord = 0;
+        private bool EverDrawPhaser = false;
 
         [UserSetting(note: "是否开启文字提醒")]
         public bool EnableTextInfo { get; set; } = true;
@@ -71,6 +72,7 @@ namespace KDrawScript.Dev
             HaveLoomingChaos = false;
             SeedTarget.Clear();
             RazingRecord = 0;
+            EverDrawPhaser = false;
             accessory.Method.RemoveDraw(".*");
         }
         #region P1
@@ -864,10 +866,8 @@ namespace KDrawScript.Dev
             dp.Scale = new(23);
             dp.Owner = sid;
             dp.Radian = 60f.DegToRad(); // Need more testing
-            accessory.Log.Debug($"Phaser AOE {sid} {rot}");
-            if (Math.Abs(Math.Abs(rot) - 1.57f) < 0.1f)
+            if (!EverDrawPhaser)
             {
-                accessory.Log.Debug($"Phaser AOE {sid} {rot} - First");
                 dp.DestoryAt = 8000;
             }
             else
@@ -875,6 +875,11 @@ namespace KDrawScript.Dev
                 dp.Delay = 7000;
                 dp.DestoryAt = 3000;
             }
+
+            Task.Delay(200).ContinueWith(t =>
+            {
+                EverDrawPhaser = true;
+            });
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
