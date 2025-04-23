@@ -235,11 +235,11 @@ namespace KDrawScript.Dev
             {
                 case "012C":
                     Embrace.Add((sid, "Forward"));
-                    SendText("存储前方", accessory);
+                    if (sid == accessory.Data.Me) SendText("存储前方", accessory);
                     break;
                 case "012D":
                     Embrace.Add((sid, "Backward"));
-                    SendText("存储后方", accessory);
+                    if (sid == accessory.Data.Me) SendText("存储后方", accessory);
                     break;
             }
         }
@@ -652,20 +652,20 @@ namespace KDrawScript.Dev
                     {
                         dp.Name = $"Third Art Of Darkness - {index}";
                         dp.Color = accessory.Data.DefaultSafeColor;
-                        dp.Scale = new(1.5f);
+                        dp.Scale = new(1.5f, 5);
                         if (Party == PartyEnum.A)
                         {
                             dp.Position = CenterA;
-                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 4, CenterA.Y, CenterA.Z);
-                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 4);
-                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 4);
+                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 5, CenterA.Y, CenterA.Z);
+                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 5);
+                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 5);
                         }
                         else if (Party == PartyEnum.C)
                         {
                             dp.Position = CenterC;
-                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 4, CenterC.Y, CenterC.Z);
-                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 4);
-                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 4);
+                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 5, CenterC.Y, CenterC.Z);
+                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 5);
+                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 5);
                         }
                         accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
@@ -673,21 +673,22 @@ namespace KDrawScript.Dev
                     {
                         dp.Name = $"Third Art Of Darkness - {index}";
                         dp.Color = accessory.Data.DefaultSafeColor;
-                        dp.Scale = new(1.5f);
+                        dp.Scale = new(1.5f, 5);
                         if (Party == PartyEnum.A)
                         {
                             dp.Position = CenterC;
-                            if (index == 5) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 4);
-                            else if (index == 6) dp.TargetPosition = new(CenterC.X + 4, CenterC.Y, CenterC.Z);
-                            else if (index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 4);
+                            if (index == 5) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 5);
+                            else if (index == 6) dp.TargetPosition = new(CenterC.X + 5, CenterC.Y, CenterC.Z);
+                            else if (index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 5);
                         }
                         else if (Party == PartyEnum.C)
                         {
                             dp.Position = CenterA;
-                            if (index == 5) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 4);
-                            else if (index == 6) dp.TargetPosition = new(CenterA.X - 4, CenterA.Y, CenterA.Z);
-                            else if (index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 4);
+                            if (index == 5) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 5);
+                            else if (index == 6) dp.TargetPosition = new(CenterA.X - 5, CenterA.Y, CenterA.Z);
+                            else if (index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 5);
                         }
+                        accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
 
                     break;
@@ -715,7 +716,7 @@ namespace KDrawScript.Dev
                         dp.DestoryAt = 4000;
                         dp.Name = $"Third Art Of Darkness - {priority[index]}";
                         dp.Color = accessory.Data.DefaultSafeColor;
-                        dp.Scale = new(1.5f);
+                        dp.Scale = new(1.5f, 5);
                         if (Party == PartyEnum.A)
                             dp.TargetPosition = SpreadPointA[priority[index]];
                         else if (Party == PartyEnum.C)
@@ -816,7 +817,7 @@ namespace KDrawScript.Dev
             if (Party == PartyEnum.None || Party == PartyEnum.B) return;
 
             var index = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
-            if (index != 0 || index != 6) return;
+            if (index != 0 && index != 6) return;
             AutoInterrupt(accessory, sid);
         }
 
@@ -1011,7 +1012,7 @@ namespace KDrawScript.Dev
         {
             var myPosition = accessory.Data.MyObject.Position;
             var targetPosition = accessory.Data.Objects.SearchById(tid).Position;
-            var threshold = 10;
+            var threshold = 20;
             return Vector3.Distance(myPosition, targetPosition) < threshold;
         }
         
