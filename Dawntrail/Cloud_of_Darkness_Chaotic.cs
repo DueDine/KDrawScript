@@ -665,7 +665,6 @@ namespace KDrawScript.Dev
                             else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 4);
                             else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 4);
                         }
-                        accessory.Log.Debug($"Draw for {tid} {Party} {dp.Position} {dp.TargetPosition}");
                         accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
                     if (HaveLoomingChaos && index >= 5) // Exchange
@@ -859,13 +858,23 @@ namespace KDrawScript.Dev
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
 
             var dp = accessory.Data.GetDefaultDrawProperties();
+            var rot = @event.SourceRotation;
             dp.Name = $"Phaser AOE - {sid}";
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(23);
             dp.Owner = sid;
-            dp.Delay = 6000;
-            dp.DestoryAt = 3000;
-            dp.Radian = 30f.DegToRad(); // Need more testing
+            dp.Radian = 60f.DegToRad(); // Need more testing
+            accessory.Log.Debug($"Phaser AOE {sid} {rot}");
+            if (Math.Abs(Math.Abs(rot) - 1.57f) < 0.1f)
+            {
+                accessory.Log.Debug($"Phaser AOE {sid} {rot} - First");
+                dp.DestoryAt = 8000;
+            }
+            else
+            {
+                dp.Delay = 7000;
+                dp.DestoryAt = 3000;
+            }
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Fan, dp);
         }
@@ -888,7 +897,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(18, 80);
             dp.Owner = sid;
-
+            dp.Delay = 10000;
 
             var change = @event["ActionId"] == "40467" ? -1 : 1;
             for (var i = 0; i < 5; i++)
@@ -896,7 +905,7 @@ namespace KDrawScript.Dev
                 dp.Name = $"Active Pivot Particle Beam - {i}";
                 dp.Rotation = i * change * float.Pi * 0.125f + rot;
                 dp.FixRotation = true;
-                dp.DestoryAt = 14500 + i * 1500;
+                dp.DestoryAt = 4500 + i * 1500;
 
                 accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
             }
