@@ -238,7 +238,7 @@ namespace KDrawScript.Dev
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(8, 8);
             dp.Owner = tid;
-            dp.DestoryAt = 8000;
+            dp.DestoryAt = 7000;
 
             if (Embrace == "Backward")
                 dp.Rotation = float.Pi;
@@ -323,7 +323,7 @@ namespace KDrawScript.Dev
                     if (HaveMitigation(accessory)) return;
                     dp.Name = "Enaero - Knockback";
                     dp.Color = accessory.Data.DefaultSafeColor;
-                    dp.Position = new(100, 0, 75);
+                    dp.Position = new(100, 0, 76.28f);
                     dp.TargetObject = accessory.Data.Me;
                     dp.Scale = new(1.5f, 21);
                     dp.DestoryAt = 2000;
@@ -383,7 +383,7 @@ namespace KDrawScript.Dev
                 dp.Name = "Endeath - Attract";
                 dp.Color = accessory.Data.DefaultSafeColor;
                 dp.Owner = accessory.Data.Me;
-                dp.TargetPosition = new(100, 0, 75);
+                dp.TargetPosition = new(100, 0, 76.28f);
                 dp.Scale = new(1.5f, 15);
                 dp.DestoryAt = 2000;
 
@@ -607,30 +607,55 @@ namespace KDrawScript.Dev
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     }
 
-                    if (!EnableGuidance) return;
-                    if (HaveLoomingChaos) return;
-                    dp.Name = $"Third Art Of Darkness - {index}";
-                    dp.Color = accessory.Data.DefaultSafeColor;
-                    dp.Scale = new(1.5f);
-                    dp.Owner = accessory.Data.Me;
+                    if (!EnableGuidance || !IsInSameSide(accessory, tid)) return;
+                    dp = accessory.Data.GetDefaultDrawProperties();
+                    dp.Name = $"Third Art Of Darkness - {tid}";
+                    dp.Color = accessory.Data.DefaultDangerColor;
+                    dp.Owner = tid;
+                    dp.Delay = 6000;
                     dp.DestoryAt = 4000;
-                    dp.ScaleMode |= ScaleMode.YByDistance;
-                    if (Party == PartyEnum.A)
+                    if (!HaveLoomingChaos)
                     {
-                        dp.Position = CenterA;
-                        if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 3, CenterA.Y, CenterA.Z);
-                        else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, 0, CenterA.Z + 3);
-                        else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 3);
+                        dp.Name = $"Third Art Of Darkness - {index}";
+                        dp.Color = accessory.Data.DefaultSafeColor;
+                        dp.Scale = new(1.5f);
+                        if (Party == PartyEnum.A)
+                        {
+                            dp.Position = CenterA;
+                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 4, CenterA.Y, CenterA.Z);
+                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 4);
+                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 4);
+                        }
+                        else if (Party == PartyEnum.C)
+                        {
+                            dp.Position = CenterC;
+                            if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 4, CenterC.Y, CenterC.Z);
+                            else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 4);
+                            else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 4);
+                        }
+                        accessory.Log.Debug($"Draw for {tid} {Party} {dp.Position} {dp.TargetPosition}");
+                        accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
-                    else if (Party == PartyEnum.C)
+                    if (HaveLoomingChaos && index >= 5) // Exchange
                     {
-                        dp.Position = CenterC;
-                        if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 3, CenterC.Y, CenterC.Z);
-                        else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, 0, CenterC.Z - 3);
-                        else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 3);
+                        dp.Name = $"Third Art Of Darkness - {index}";
+                        dp.Color = accessory.Data.DefaultSafeColor;
+                        dp.Scale = new(1.5f);
+                        if (Party == PartyEnum.A)
+                        {
+                            dp.Position = CenterC;
+                            if (index == 5) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 4);
+                            else if (index == 6) dp.TargetPosition = new(CenterC.X + 4, CenterC.Y, CenterC.Z);
+                            else if (index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 4);
+                        }
+                        else if (Party == PartyEnum.C)
+                        {
+                            dp.Position = CenterA;
+                            if (index == 5) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 4);
+                            else if (index == 6) dp.TargetPosition = new(CenterA.X - 4, CenterA.Y, CenterA.Z);
+                            else if (index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 4);
+                        }
                     }
-
-                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
 
                     break;
                 case "00F2":
@@ -645,16 +670,19 @@ namespace KDrawScript.Dev
                         accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Rect, dp);
                     }
 
-                    if (!EnableGuidance) return;
-                    var priority = new int[] { 2, -1, -1, 3, 0, 1, 4, 5 };
+                    if (!EnableGuidance || !IsInSameSide(accessory, tid)) return;
+                    var priority = new int[] { 2, -1, -1, 3, 0, 5, 1, 4 };
                     if (priority[index] != -1)
                     {
+                        dp = accessory.Data.GetDefaultDrawProperties();
+                        dp.Name = $"Third Art Of Darkness - {tid}";
+                        dp.Color = accessory.Data.DefaultDangerColor;
+                        dp.Owner = tid;
+                        dp.Delay = 6000;
+                        dp.DestoryAt = 4000;
                         dp.Name = $"Third Art Of Darkness - {priority[index]}";
                         dp.Color = accessory.Data.DefaultSafeColor;
                         dp.Scale = new(1.5f);
-                        dp.Owner = accessory.Data.Me;
-                        dp.DestoryAt = 4000;
-                        dp.ScaleMode |= ScaleMode.YByDistance;
                         if (Party == PartyEnum.A)
                             dp.TargetPosition = SpreadPointA[priority[index]];
                         else if (Party == PartyEnum.C)
@@ -902,6 +930,14 @@ namespace KDrawScript.Dev
         private bool HaveMitigation(ScriptAccessory accessory)
         {
             return accessory.Data.MyObject.HasStatusAny(new uint[] { 160, 1209 });
+        }
+
+        private bool IsInSameSide(ScriptAccessory accessory, ulong tid)
+        {
+            var myPosition = accessory.Data.MyObject.Position;
+            var targetPosition = accessory.Data.Objects.SearchById(tid).Position;
+            var threshold = 5;
+            return Vector3.Distance(myPosition, targetPosition) < threshold;
         }
         
         /// <summary>
