@@ -15,7 +15,7 @@ using KodakkuAssist.Module.Draw.Manager;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.7", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.0.8", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -389,8 +389,6 @@ namespace KDrawScript.Dev
 
                 accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
             });
-
-            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[79])$"])]
@@ -489,16 +487,19 @@ namespace KDrawScript.Dev
         
         private int GetMemberIdx(ScriptAccessory sa)
         {
-            var myParty = Party switch
+            try
             {
-                PartyEnum.A => 0,
-                PartyEnum.B => 10,
-                PartyEnum.C => 20,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            var myIndex = sa.Data.PartyList.IndexOf(sa.Data.Me);
-            if (myIndex == -1) return -1;
-            return myParty + myIndex;
+                var myParty = Party switch
+                {
+                    PartyEnum.A => 0,
+                    PartyEnum.B => 10,
+                    PartyEnum.C => 20,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+                var myIndex = sa.Data.PartyList.IndexOf(sa.Data.Me);
+                if (myIndex == -1) return -1;
+                return myParty + myIndex;
+            } catch { return -1; }
         }
     
         [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
