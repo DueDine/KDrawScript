@@ -16,7 +16,7 @@ using Dalamud.Utility.Numerics;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.0", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.1", author: "Due", note: NoteStr)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
