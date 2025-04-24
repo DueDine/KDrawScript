@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using KodakkuAssist.Module.Draw.Manager;
 using Dalamud.Utility.Numerics;
@@ -18,7 +19,7 @@ using KodakkuAssist.Data;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.2", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.3", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -31,7 +32,9 @@ namespace KDrawScript.Dev
         private const string UpdateInfo =
             """
             1. 修复了P3小云正侧炮。
-            2. B队添加放种子前预占位，其余功能开发中。
+            2. 内场组添加放种子前预站位。
+            3. 内场组添加回旋式波动炮预占位与返回位。
+            4. 若处于内场组，回旋式波动炮范围绘图直接出现。
             """;
         
         private const bool Debugging = false;
@@ -49,6 +52,10 @@ namespace KDrawScript.Dev
         }
 
         private CodPhase _codPhase = CodPhase.Init;
+        private static List<ManualResetEvent> _events = Enumerable
+            .Range(0, 20)
+            .Select(_ => new ManualResetEvent(false))
+            .ToList();
 
         private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
@@ -92,6 +99,11 @@ namespace KDrawScript.Dev
         public void Init(ScriptAccessory accessory)
         {
             _codPhase = CodPhase.Init;
+            List<ManualResetEvent> _events = Enumerable
+                .Range(0, 20)
+                .Select(_ => new ManualResetEvent(false))
+                .ToList();
+            
             Embrace.Clear();
             DelayWhat = string.Empty;
             HaveLoomingChaos = false;
@@ -590,7 +602,7 @@ namespace KDrawScript.Dev
         }
         
         [ScriptMethod(name: "阶段转换 - 三重", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
-            userControl: false)]
+            userControl: Debugging)]
         public void PhaseChange_P3(Event ev, ScriptAccessory sa)
         {
             _codPhase = CodPhase.Tilt;
@@ -677,6 +689,67 @@ namespace KDrawScript.Dev
                 if (myIndex == -1) return -1;
                 return myParty + myIndex;
             } catch { return -1; }
+        }
+        
+        // 该功能未进行充分测试，先屏蔽。
+        
+        // [ScriptMethod(name: "等待小云出现并可选中", eventType: EventTypeEnum.PlayActionTimeline, eventCondition: ["SourceDataId:17951", "Id:7747"],
+        //     userControl: false)]
+        // public async void P3ShadowTimeline(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     sa.Log.Debug($"检测到小云出现 PlayActionTimeline");
+        //     await Task.Delay(2000);
+        //     _events[0].Set();
+        // }
+        
+        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 1（请与下项一同开启）", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:regex:^(417[78])$"],
+        //     userControl: true)]
+        // public void P3DistargetableBoss(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     if (ev.TargetId != sa.Data.Me) return;
+        //     // 4177 inner platform
+        //     // 4178 side platform
+        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
+        //     _events[0].WaitOne();
+        //     SetTargetableBoss(sa, ev.StatusId != 4177u, false);
+        // }
+        
+        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 2", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:regex:^(417[78])$"],
+        //     userControl: true)]
+        // public void P3TargetableBoss(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     if (ev.TargetId != sa.Data.Me) return;
+        //     // 4177 inner platform
+        //     // 4178 side platform
+        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
+        //     _events[0].WaitOne();
+        //     SetTargetableBoss(sa, ev.StatusId != 4177u, true);
+        // }
+        
+        private void SetTargetableBoss(ScriptAccessory sa, bool isCloud, bool isTargetable)
+        {
+            if (isCloud)
+            {
+                var cloudCharaEnum = sa.Data.Objects.GetByDataId(0x461e);
+                List<IGameObject> cloudCharaList = cloudCharaEnum.ToList();
+                sa.Log.Debug($"获得 {cloudCharaList.Count} 个 0x461e 实体，为大云。");
+                if (cloudCharaList.Count != 1) return;
+                var cloudChara = cloudCharaList[0];
+                SetTargetable(sa, cloudChara, isTargetable);
+            }
+            else
+            {
+                var shadowCharaEnum = sa.Data.Objects.GetByDataId(0x461f);
+                List<IGameObject> shadowCharaList = shadowCharaEnum.ToList();
+                sa.Log.Debug($"获得 {shadowCharaList.Count} 个 0x461f 实体，为小云。");
+                if (shadowCharaList.Count != 2) return;
+
+                foreach (var shadowChara in shadowCharaList)
+                    SetTargetable(sa, shadowChara, isTargetable);
+            }
         }
     
         [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
@@ -1042,6 +1115,81 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
+        
+        [ScriptMethod(name: "Pivot Particle Beam 内场回旋式波动炮就位提示", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"],
+            userControl: true)]
+        public void P3PivotBeamGuidance(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            // 判断自身是否在内场
+            if (!IsOnInnerPlatform(sa, sa.Data.Me)) return;
+
+            var myMemberIdx = GetMemberIdx(sa);
+            var bottomLeftSafe = ev.ActionId == 40467;  // clockwise 40467 顺时针
+            List<Vector3> pos = myMemberIdx switch
+            {
+                // UP LEFT
+                2 => bottomLeftSafe ? [GetBlockField(2, 6), GetBlockField(1, 2)] : [GetBlockField(1, 2), GetBlockField(1, 2)], // AH1
+                1 => bottomLeftSafe ? [GetBlockField(2, 7), GetBlockField(2, 3)] : [GetBlockField(2, 1), GetBlockField(2, 3)], // AST
+                14 => bottomLeftSafe ? [GetBlockField(2, 5), GetBlockField(3, 2)] : [GetBlockField(3, 2), GetBlockField(3, 2)], // BD1
+                
+                // BOTTOM RIGHT
+                13 => bottomLeftSafe ? [GetBlockField(7, 3), GetBlockField(6, 7)] : [GetBlockField(6, 7), GetBlockField(6, 7)], // BH2
+                11 => bottomLeftSafe ? [GetBlockField(7, 2), GetBlockField(7, 6)] : [GetBlockField(7, 8), GetBlockField(7, 6)], // BST
+                17 => bottomLeftSafe ? [GetBlockField(7, 4), GetBlockField(8, 7)] : [GetBlockField(8, 7), GetBlockField(8, 7)], // BD4
+                
+                // UP RIGHT
+                22 => bottomLeftSafe ? [GetBlockField(1, 7), GetBlockField(1, 7)] : [GetBlockField(2, 3), GetBlockField(1, 7)], // CH1
+                21 => bottomLeftSafe ? [GetBlockField(2, 8), GetBlockField(2, 6)] : [GetBlockField(2, 2), GetBlockField(2, 6)], // CST
+                15 => bottomLeftSafe ? [GetBlockField(3, 7), GetBlockField(3, 7)] : [GetBlockField(2, 4), GetBlockField(3, 7)], // BD2
+                
+                // BOTTOM LEFT
+                12 => bottomLeftSafe ? [GetBlockField(6, 2), GetBlockField(6, 2)] : [GetBlockField(7, 6), GetBlockField(6, 2)], // BH1
+                10 => bottomLeftSafe ? [GetBlockField(7, 1), GetBlockField(7, 3)] : [GetBlockField(7, 7), GetBlockField(7, 3)], // BMT
+                16 => bottomLeftSafe ? [GetBlockField(8, 2), GetBlockField(8, 2)] : [GetBlockField(7, 5), GetBlockField(8, 2)], // BD3
+                
+                _ => []
+            };
+
+            if (pos.Count == 0)
+            {
+                sa.Log.Debug($"不属于场内人员却出现在了场内，需灵性处理，不作指路。");
+                return;
+            }
+            
+            // 第一轮绘图，就位位置
+            // 画方格
+            var dp0 = sa.Data.GetDefaultDrawProperties();
+            dp0.Name = $"方格{myMemberIdx}";
+            dp0.Scale = new Vector2(6, 6);
+            dp0.Position = pos[0];
+            dp0.Delay = 0;
+            dp0.DestoryAt = 14500;
+            dp0.Color = sa.Data.DefaultSafeColor;
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp0);
+
+            // 画指路线
+            var dp = DrawGuidance(sa, pos[0], 0, 14500, "旋转波动炮就位位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            sa.Log.Debug($"获得波动炮{(bottomLeftSafe ? "左下/右上安全" : "右下/左上安全")}的就位位置{pos[0]}");
+            
+            // 第二轮绘图，就位位置
+            // 画方格
+            var dp01 = sa.Data.GetDefaultDrawProperties();
+            dp01.Name = $"方格{myMemberIdx}";
+            dp01.Scale = new Vector2(6, 6);
+            dp01.Position = pos[1];
+            dp01.Delay = 21000;
+            dp01.DestoryAt = 7000;
+            dp01.Color = sa.Data.DefaultSafeColor;
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp01);
+
+            // 画指路线
+            var dp1 = DrawGuidance(sa, pos[1], 21000, 7000, "旋转波动炮返回位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp1);
+            sa.Log.Debug($"获得波动炮{(bottomLeftSafe ? "左下/右上安全" : "右下/左上安全")}的返回位置{pos[1]}");
+
+        }
 
         [ScriptMethod(name: "Chaos Condensed Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40461"])]
         public void ChaosCondensedParticleBeam(Event @event, ScriptAccessory accessory)
@@ -1104,13 +1252,15 @@ namespace KDrawScript.Dev
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            
+            bool isOnInnerPlatform = IsOnInnerPlatform(accessory, accessory.Data.Me);
 
             var dp = accessory.Data.GetDefaultDrawProperties();
             var rot = -float.Pi / 2;
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(18, 80);
             dp.Owner = sid;
-            dp.Delay = 10000;
+            dp.Delay = isOnInnerPlatform ? 0 : 10000;
 
             var change = @event["ActionId"] == "40467" ? -1 : 1;
             for (var i = 0; i < 5; i++)
@@ -1118,7 +1268,7 @@ namespace KDrawScript.Dev
                 dp.Name = $"Active Pivot Particle Beam - {i}";
                 dp.Rotation = i * change * float.Pi * 0.125f + rot;
                 dp.FixRotation = true;
-                dp.DestoryAt = 4500 + i * 1500;
+                dp.DestoryAt = 4500 + i * 1500 + (isOnInnerPlatform ? 10000 : 0);
 
                 accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
             }
