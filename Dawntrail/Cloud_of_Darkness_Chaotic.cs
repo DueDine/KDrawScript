@@ -1,6 +1,7 @@
 ﻿using ECommons;
 using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using KodakkuAssist.Extensions;
 using KodakkuAssist.Module.Draw;
@@ -44,7 +45,7 @@ namespace KDrawScript.Dev
             Init,
             Diamond,
             Tilt,
-            Exchange,
+            // Exchange,    // 弃用，可以使用 bool HaveLoomingChaos;
         }
 
         private CodPhase _codPhase = CodPhase.Init;
@@ -135,7 +136,9 @@ namespace KDrawScript.Dev
             sa.Log.Debug($"====== 内场玩家：======");
             foreach (var player in players)
             {
-                sa.Log.Debug($"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}, {player.Value.Item3}, eid {player.Value.Item4:x8}");
+                sa.Log.Debug(
+                    $"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}," +
+                    $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
             }
         }
         
@@ -148,8 +151,38 @@ namespace KDrawScript.Dev
             sa.Log.Debug($"====== 外场玩家：======");
             foreach (var player in players)
             {
-                sa.Log.Debug($"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}, {player.Value.Item3}, eid {player.Value.Item4:x8}");
+                sa.Log.Debug(
+                    $"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}," +
+                    $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
             }
+        }
+        
+        [ScriptMethod(name: "测试 翻转大云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public unsafe void ToggleCloudsTargetable(Event ev, ScriptAccessory sa)
+        {
+            var cloudCharaEnum = sa.Data.Objects.GetByDataId(0x461e);
+            List<IGameObject> cloudCharaList = cloudCharaEnum.ToList();
+            sa.Log.Debug($"获得 {cloudCharaList.Count} 个 0x461e 实体，为大云。");
+            if (cloudCharaList.Count != 1) return;
+
+            var cloudChara = cloudCharaList[0];
+            SetTargetable(sa, cloudChara, !cloudChara.IsTargetable);
+            sa.Log.Debug($"已翻转大云可选中状态。");
+        }
+        
+        [ScriptMethod(name: "测试 翻转小云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public unsafe void ToggleShadowsTargetable(Event ev, ScriptAccessory sa)
+        {
+            var shadowCharaEnum = sa.Data.Objects.GetByDataId(0x461f);
+            List<IGameObject> shadowCharaList = shadowCharaEnum.ToList();
+            sa.Log.Debug($"获得 {shadowCharaList.Count} 个 0x461f 实体，为小云。");
+            if (shadowCharaList.Count != 2) return;
+
+            foreach (var shadowChara in shadowCharaList)
+                SetTargetable(sa, shadowChara, !shadowChara.IsTargetable);
+            sa.Log.Debug($"已翻转小云可选中状态。");
         }
         
         #endregion TestRegion
@@ -616,8 +649,8 @@ namespace KDrawScript.Dev
             {
                 safePos = (myMemberIdx / 10) switch
                 {
-                    0 => new Vector3(73.5f, 0, 100f),
-                    2 => new Vector3(126.5f, 0, 100f),
+                    0 => CenterA,
+                    2 => CenterC,
                     _ => new Vector3(0, 0, 0),
                 };
             }
@@ -1232,9 +1265,9 @@ namespace KDrawScript.Dev
         /// <param name="sa"></param>
         /// <param name="innerPlatform">是否是内场玩家</param>
         /// <returns></returns>
-        private unsafe Dictionary<int, (bool, int, string, ulong)> GetPlatformPlayers(ScriptAccessory sa, bool innerPlatform = true)
+        private unsafe Dictionary<int, (bool, int, string, ulong, Vector3)> GetPlatformPlayers(ScriptAccessory sa, bool innerPlatform = true)
         {
-            var innerPlayersDict = new Dictionary<int, (bool sameParty, int job, string name, ulong eid)>();
+            var innerPlayersDict = new Dictionary<int, (bool sameParty, int job, string name, ulong eid, Vector3 pos)>();
             // 先找本队
             for (int i = 0; i < sa.Data.PartyList.Count; i++)
             {
@@ -1250,7 +1283,7 @@ namespace KDrawScript.Dev
                     -1;
                 
                 // Dict的Key，为了与MemberIdx区分，+100
-                innerPlayersDict.Add(i + 100, (true, job, chara.Name.ToString(), entityId));
+                innerPlayersDict.Add(i + 100, (true, job, chara.Name.ToString(), entityId, chara.Position));
             }
             
             // 再找团队
@@ -1269,14 +1302,15 @@ namespace KDrawScript.Dev
                         chara.IsDps() ? 2 :
                         -1;
 
-                    innerPlayersDict.Add(j + 10 * (index+1) + 100, (false, job, chara.Name.ToString(), entityId));
+                    innerPlayersDict.Add(j + 10 * (index + 1) + 100,
+                        (false, job, chara.Name.ToString(), entityId, chara.Position));
                 }
             }
             return innerPlayersDict;
         }
         
-        private Dictionary<int, (bool, int, string, ulong)> GetInnerPlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, true);
-        private Dictionary<int, (bool, int, string, ulong)> GetSidePlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, false);
+        private Dictionary<int, (bool, int, string, ulong, Vector3)> GetInnerPlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, true);
+        private Dictionary<int, (bool, int, string, ulong, Vector3)> GetSidePlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, false);
         
         /// <summary>
         /// 返回箭头指引相关dp
@@ -1491,7 +1525,28 @@ namespace KDrawScript.Dev
             }
 
         }
-                
+        
+        public unsafe static void SetTargetable(ScriptAccessory sa, IGameObject? obj, bool targetable)
+        {
+            if (obj == null || !obj.IsValid())
+            {
+                sa.Log.Error($"传入的IGameObject不合法。");
+                return;
+            }
+            GameObject* charaStruct = (GameObject*)obj.Address;
+            if (targetable)
+            {
+                if (obj.IsDead || obj.IsTargetable) return;
+                charaStruct->TargetableStatus |= ObjectTargetableFlags.IsTargetable;
+            }
+            else
+            {
+                if (!obj.IsTargetable) return;
+                charaStruct->TargetableStatus &= ~ObjectTargetableFlags.IsTargetable;
+            }
+            sa.Log.Debug($"SetTargetable {targetable} => {obj.Name} {obj}");
+        }
+        
         #endregion
     }
 }
