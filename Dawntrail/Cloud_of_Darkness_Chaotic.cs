@@ -1,6 +1,7 @@
 ﻿using ECommons;
 using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using KodakkuAssist.Extensions;
 using KodakkuAssist.Module.Draw;
@@ -10,13 +11,15 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using KodakkuAssist.Module.Draw.Manager;
 using Dalamud.Utility.Numerics;
+using KodakkuAssist.Data;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.2", author: "Due", note: NoteStr)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.3", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -25,6 +28,34 @@ namespace KDrawScript.Dev
         仅有计划做 A/C 队 D2 - 4 指路 （即固定换到对方平台组）
         若发生问题请携ARR反馈。
         """;
+        
+        private const string UpdateInfo =
+            """
+            1. 修复了P3小云正侧炮。
+            2. 内场组添加放种子前预站位。
+            3. 内场组添加回旋式波动炮预占位与返回位。
+            4. 若处于内场组，回旋式波动炮范围绘图直接出现。
+            """;
+        
+        private const bool Debugging = false;
+        private const bool ReplayGroup = false;
+        
+        private static List<string> _role = ["MT", "ST", "H1", "H2", "D1", "D2", "D3", "D4"];
+        private static List<string> _alliance = ["A", "B", "C"];
+        private int _partyMemberIdx = -1;
+        private enum CodPhase
+        {
+            Init,
+            Diamond,
+            Tilt,
+            // Exchange,    // 弃用，可以使用 bool HaveLoomingChaos;
+        }
+
+        private CodPhase _codPhase = CodPhase.Init;
+        private static List<ManualResetEvent> _events = Enumerable
+            .Range(0, 20)
+            .Select(_ => new ManualResetEvent(false))
+            .ToList();
 
         private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
@@ -67,6 +98,12 @@ namespace KDrawScript.Dev
 
         public void Init(ScriptAccessory accessory)
         {
+            _codPhase = CodPhase.Init;
+            List<ManualResetEvent> _events = Enumerable
+                .Range(0, 20)
+                .Select(_ => new ManualResetEvent(false))
+                .ToList();
+            
             Embrace.Clear();
             DelayWhat = string.Empty;
             HaveLoomingChaos = false;
@@ -75,12 +112,114 @@ namespace KDrawScript.Dev
             EverDrawPhaser = false;
             accessory.Method.RemoveDraw(".*");
         }
+        
+        #region TestRegion
+        
+        [ScriptMethod(name: "---- 测试项 ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void SplitLine_TestRegion(Event ev, ScriptAccessory sa)
+        {
+        }
+        
+        [ScriptMethod(name: "测试 我在内场还是外场", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void LocateAtWhichPlatform(Event ev, ScriptAccessory sa)
+        {
+            var str = "";
+            str += $"{(IsOnInnerPlatform(sa, sa.Data.Me) ? "在内场" : "不在内场")}";
+            str += $"{(IsOnSidePlatform(sa, sa.Data.Me) ? "在外场" : "不在外场")}";
+            sa.Log.Debug(str);
+        }
+        
+        [ScriptMethod(name: "测试 我是谁", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void WhoAmI(Event ev, ScriptAccessory sa)
+        {
+            var myMemberIdx = GetMemberIdx(sa);
+            sa.Log.Debug($"你的身份为，【{_alliance[myMemberIdx / 10]} 队 {_role[myMemberIdx % 10]}】");
+        }
+        
+        [ScriptMethod(name: "测试 获得内场玩家", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void PrintInnerPlatformPlayers(Event ev, ScriptAccessory sa)
+        {
+            var players = GetInnerPlatformPlayers(sa);
+            List<string> jobString = ["Tank", "Healer", "Dps"];
+            sa.Log.Debug($"====== 内场玩家：======");
+            foreach (var player in players)
+            {
+                sa.Log.Debug(
+                    $"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}," +
+                    $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
+            }
+        }
+        
+        [ScriptMethod(name: "测试 获得外场玩家", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void PrintSidePlatformPlayers(Event ev, ScriptAccessory sa)
+        {
+            var players = GetSidePlatformPlayers(sa);
+            List<string> jobString = ["Tank", "Healer", "Dps"];
+            sa.Log.Debug($"====== 外场玩家：======");
+            foreach (var player in players)
+            {
+                sa.Log.Debug(
+                    $"{player.Key}, 同组 {player.Value.Item1}, 职能 {jobString[player.Value.Item2]}," +
+                    $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
+            }
+        }
+        
+        [ScriptMethod(name: "测试 翻转大云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public unsafe void ToggleCloudsTargetable(Event ev, ScriptAccessory sa)
+        {
+            var cloudCharaEnum = sa.Data.Objects.GetByDataId(0x461e);
+            List<IGameObject> cloudCharaList = cloudCharaEnum.ToList();
+            sa.Log.Debug($"获得 {cloudCharaList.Count} 个 0x461e 实体，为大云。");
+            if (cloudCharaList.Count != 1) return;
+
+            var cloudChara = cloudCharaList[0];
+            SetTargetable(sa, cloudChara, !cloudChara.IsTargetable);
+            sa.Log.Debug($"已翻转大云可选中状态。");
+        }
+        
+        [ScriptMethod(name: "测试 翻转小云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public unsafe void ToggleShadowsTargetable(Event ev, ScriptAccessory sa)
+        {
+            var shadowCharaEnum = sa.Data.Objects.GetByDataId(0x461f);
+            List<IGameObject> shadowCharaList = shadowCharaEnum.ToList();
+            sa.Log.Debug($"获得 {shadowCharaList.Count} 个 0x461f 实体，为小云。");
+            if (shadowCharaList.Count != 2) return;
+
+            foreach (var shadowChara in shadowCharaList)
+                SetTargetable(sa, shadowChara, !shadowChara.IsTargetable);
+            sa.Log.Debug($"已翻转小云可选中状态。");
+        }
+        
+        #endregion TestRegion
+        
         #region P1
         
         [ScriptMethod(name: "---- Phase Diamond ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: true)]
         public void SplitLine_Phase2(Event ev, ScriptAccessory sa)
         {
+        }
+        
+        [ScriptMethod(name: "阶段转换 - 钻石", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40509"],
+            userControl: Debugging)]
+        public void PhaseChange_P2(Event ev, ScriptAccessory sa)
+        {
+            _codPhase = CodPhase.Diamond;
+            sa.Log.Debug($"当前阶段为：{_codPhase}");
+            var partyMemberIdxNew = GetMemberIdx(sa);
+            if (_partyMemberIdx != partyMemberIdxNew)
+            {
+                _partyMemberIdx = partyMemberIdxNew;
+                sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
+                    5000, false);
+            }
         }
         
         [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
@@ -117,9 +256,10 @@ namespace KDrawScript.Dev
             }
         }
 
-        [ScriptMethod(name: "AOE 提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40509|40510|40456)$"])]
+        [ScriptMethod(name: "AOE 提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40510|40456)$"])]
         public void DelugeofDarkness(Event @event, ScriptAccessory accessory)
         {
+            // Usami: 我把 [40509 暗之泛滥] AOE提醒的部分改成了玩家身份提醒，按理说AOE应该不会忘吧！
             SendText("AOE", accessory);
         }
 
@@ -461,6 +601,21 @@ namespace KDrawScript.Dev
         {
         }
         
+        [ScriptMethod(name: "阶段转换 - 三重", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
+            userControl: Debugging)]
+        public void PhaseChange_P3(Event ev, ScriptAccessory sa)
+        {
+            _codPhase = CodPhase.Tilt;
+            sa.Log.Debug($"当前阶段为：{_codPhase}");
+            var partyMemberIdxNew = GetMemberIdx(sa);
+            if (_partyMemberIdx != partyMemberIdxNew)
+            {
+                _partyMemberIdx = partyMemberIdxNew;
+                sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
+                    5000, false);
+            }
+        }
+        
         [ScriptMethod(name: "初始位置", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
         userControl: true)]
         public void P3InitField(Event ev, ScriptAccessory sa)
@@ -534,6 +689,67 @@ namespace KDrawScript.Dev
                 if (myIndex == -1) return -1;
                 return myParty + myIndex;
             } catch { return -1; }
+        }
+        
+        // 该功能未进行充分测试，先屏蔽。
+        
+        // [ScriptMethod(name: "等待小云出现并可选中", eventType: EventTypeEnum.PlayActionTimeline, eventCondition: ["SourceDataId:17951", "Id:7747"],
+        //     userControl: false)]
+        // public async void P3ShadowTimeline(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     sa.Log.Debug($"检测到小云出现 PlayActionTimeline");
+        //     await Task.Delay(2000);
+        //     _events[0].Set();
+        // }
+        
+        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 1（请与下项一同开启）", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:regex:^(417[78])$"],
+        //     userControl: true)]
+        // public void P3DistargetableBoss(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     if (ev.TargetId != sa.Data.Me) return;
+        //     // 4177 inner platform
+        //     // 4178 side platform
+        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
+        //     _events[0].WaitOne();
+        //     SetTargetableBoss(sa, ev.StatusId != 4177u, false);
+        // }
+        
+        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 2", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:regex:^(417[78])$"],
+        //     userControl: true)]
+        // public void P3TargetableBoss(Event ev, ScriptAccessory sa)
+        // {
+        //     if (_codPhase != CodPhase.Tilt) return;
+        //     if (ev.TargetId != sa.Data.Me) return;
+        //     // 4177 inner platform
+        //     // 4178 side platform
+        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
+        //     _events[0].WaitOne();
+        //     SetTargetableBoss(sa, ev.StatusId != 4177u, true);
+        // }
+        
+        private void SetTargetableBoss(ScriptAccessory sa, bool isCloud, bool isTargetable)
+        {
+            if (isCloud)
+            {
+                var cloudCharaEnum = sa.Data.Objects.GetByDataId(0x461e);
+                List<IGameObject> cloudCharaList = cloudCharaEnum.ToList();
+                sa.Log.Debug($"获得 {cloudCharaList.Count} 个 0x461e 实体，为大云。");
+                if (cloudCharaList.Count != 1) return;
+                var cloudChara = cloudCharaList[0];
+                SetTargetable(sa, cloudChara, isTargetable);
+            }
+            else
+            {
+                var shadowCharaEnum = sa.Data.Objects.GetByDataId(0x461f);
+                List<IGameObject> shadowCharaList = shadowCharaEnum.ToList();
+                sa.Log.Debug($"获得 {shadowCharaList.Count} 个 0x461f 实体，为小云。");
+                if (shadowCharaList.Count != 2) return;
+
+                foreach (var shadowChara in shadowCharaList)
+                    SetTargetable(sa, shadowChara, isTargetable);
+            }
         }
     
         [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
@@ -727,7 +943,71 @@ namespace KDrawScript.Dev
                     break;
             }
         }
+        
+        [ScriptMethod(name: "Evil Seed Prepared Position 场内放种子前就位", 
+            eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40490"],
+            suppress: 10000, userControl: true)]
+        public void EvilSeedPreparedPosition(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            
+            // suppress 10000，该技能为场边两只小云的读条，避免执行两次
+            var myMemberIdx = GetMemberIdx(sa);
+            if (myMemberIdx == -1)
+            {
+                sa.Log.Debug($"获得MemberIdx错误，可能该目标非我队队员");
+                return;
+            }
+            
+            // 获得玩家状态，是否带有InnerDarkness状态
+            if (!IsOnInnerPlatform(sa, sa.Data.Me))
+            {
+                sa.Log.Debug($"玩家不在场中平台上，真可怜！");
+                return;
+            }
+            
+            Vector3 readyPos = myMemberIdx switch
+            {
+                10 => GetBlockField(7, 3),  // B-MT
+                11 => GetBlockField(7, 6),  // B-ST
+                12 => GetBlockField(7, 1),  // B-H1
+                13 => GetBlockField(7, 8),  // B-H2
+                14 => GetBlockField(2, 1),  // B-D1
+                15 => GetBlockField(2, 8),  // B-D2
+                16 => GetBlockField(8, 2),  // B-D3
+                17 => GetBlockField(8, 7),  // B-D4
+                
+                2 => GetBlockField(1, 2),   // A-H1
+                1 => GetBlockField(2, 3),   // A-ST
+                22 => GetBlockField(1, 7),  // C-H1
+                21 => GetBlockField(2, 6),  // C-ST
+                _ => new Vector3(0, 0, 0),
+            };
+            
+            sa.Method.TextInfo("放种子前就位", 4000, false);
 
+            if (readyPos == new Vector3(0, 0, 0))
+            {
+                sa.Log.Debug($"不应在场内的玩家却出现在了场内，真可怜！");
+                return;
+            }
+            
+            // 画方格
+            var dp0 = sa.Data.GetDefaultDrawProperties();
+            dp0.Name = $"方格{myMemberIdx}";
+            dp0.Scale = new Vector2(6, 6);
+            dp0.Position = readyPos;
+            dp0.Delay = 0;
+            dp0.DestoryAt = 7000;
+            dp0.Color = sa.Data.DefaultSafeColor;
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp0);
+
+            // 画指路线
+            var dp = DrawGuidance(sa, readyPos, 0, 7000, "放种子就位位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            sa.Log.Debug($"获得{myMemberIdx}的放种子就位位置{readyPos}");
+        }
+        
         [ScriptMethod(name: "Evil Seed 放种子绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0227"])]
         public void EvilSeed(Event @event, ScriptAccessory accessory)
         {
@@ -835,6 +1115,81 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
+        
+        [ScriptMethod(name: "Pivot Particle Beam 内场回旋式波动炮就位提示", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"],
+            userControl: true)]
+        public void P3PivotBeamGuidance(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            // 判断自身是否在内场
+            if (!IsOnInnerPlatform(sa, sa.Data.Me)) return;
+
+            var myMemberIdx = GetMemberIdx(sa);
+            var bottomLeftSafe = ev.ActionId == 40467;  // clockwise 40467 顺时针
+            List<Vector3> pos = myMemberIdx switch
+            {
+                // UP LEFT
+                2 => bottomLeftSafe ? [GetBlockField(2, 6), GetBlockField(1, 2)] : [GetBlockField(1, 2), GetBlockField(1, 2)], // AH1
+                1 => bottomLeftSafe ? [GetBlockField(2, 7), GetBlockField(2, 3)] : [GetBlockField(2, 1), GetBlockField(2, 3)], // AST
+                14 => bottomLeftSafe ? [GetBlockField(2, 5), GetBlockField(3, 2)] : [GetBlockField(3, 2), GetBlockField(3, 2)], // BD1
+                
+                // BOTTOM RIGHT
+                13 => bottomLeftSafe ? [GetBlockField(7, 3), GetBlockField(6, 7)] : [GetBlockField(6, 7), GetBlockField(6, 7)], // BH2
+                11 => bottomLeftSafe ? [GetBlockField(7, 2), GetBlockField(7, 6)] : [GetBlockField(7, 8), GetBlockField(7, 6)], // BST
+                17 => bottomLeftSafe ? [GetBlockField(7, 4), GetBlockField(8, 7)] : [GetBlockField(8, 7), GetBlockField(8, 7)], // BD4
+                
+                // UP RIGHT
+                22 => bottomLeftSafe ? [GetBlockField(1, 7), GetBlockField(1, 7)] : [GetBlockField(2, 3), GetBlockField(1, 7)], // CH1
+                21 => bottomLeftSafe ? [GetBlockField(2, 8), GetBlockField(2, 6)] : [GetBlockField(2, 2), GetBlockField(2, 6)], // CST
+                15 => bottomLeftSafe ? [GetBlockField(3, 7), GetBlockField(3, 7)] : [GetBlockField(2, 4), GetBlockField(3, 7)], // BD2
+                
+                // BOTTOM LEFT
+                12 => bottomLeftSafe ? [GetBlockField(6, 2), GetBlockField(6, 2)] : [GetBlockField(7, 6), GetBlockField(6, 2)], // BH1
+                10 => bottomLeftSafe ? [GetBlockField(7, 1), GetBlockField(7, 3)] : [GetBlockField(7, 7), GetBlockField(7, 3)], // BMT
+                16 => bottomLeftSafe ? [GetBlockField(8, 2), GetBlockField(8, 2)] : [GetBlockField(7, 5), GetBlockField(8, 2)], // BD3
+                
+                _ => []
+            };
+
+            if (pos.Count == 0)
+            {
+                sa.Log.Debug($"不属于场内人员却出现在了场内，需灵性处理，不作指路。");
+                return;
+            }
+            
+            // 第一轮绘图，就位位置
+            // 画方格
+            var dp0 = sa.Data.GetDefaultDrawProperties();
+            dp0.Name = $"方格{myMemberIdx}";
+            dp0.Scale = new Vector2(6, 6);
+            dp0.Position = pos[0];
+            dp0.Delay = 0;
+            dp0.DestoryAt = 14500;
+            dp0.Color = sa.Data.DefaultSafeColor;
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp0);
+
+            // 画指路线
+            var dp = DrawGuidance(sa, pos[0], 0, 14500, "旋转波动炮就位位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+            sa.Log.Debug($"获得波动炮{(bottomLeftSafe ? "左下/右上安全" : "右下/左上安全")}的就位位置{pos[0]}");
+            
+            // 第二轮绘图，就位位置
+            // 画方格
+            var dp01 = sa.Data.GetDefaultDrawProperties();
+            dp01.Name = $"方格{myMemberIdx}";
+            dp01.Scale = new Vector2(6, 6);
+            dp01.Position = pos[1];
+            dp01.Delay = 21000;
+            dp01.DestoryAt = 7000;
+            dp01.Color = sa.Data.DefaultSafeColor;
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp01);
+
+            // 画指路线
+            var dp1 = DrawGuidance(sa, pos[1], 21000, 7000, "旋转波动炮返回位置");
+            sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp1);
+            sa.Log.Debug($"获得波动炮{(bottomLeftSafe ? "左下/右上安全" : "右下/左上安全")}的返回位置{pos[1]}");
+
+        }
 
         [ScriptMethod(name: "Chaos Condensed Particle Beam", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40461"])]
         public void ChaosCondensedParticleBeam(Event @event, ScriptAccessory accessory)
@@ -897,13 +1252,15 @@ namespace KDrawScript.Dev
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
+            
+            bool isOnInnerPlatform = IsOnInnerPlatform(accessory, accessory.Data.Me);
 
             var dp = accessory.Data.GetDefaultDrawProperties();
             var rot = -float.Pi / 2;
             dp.Color = accessory.Data.DefaultDangerColor;
             dp.Scale = new(18, 80);
             dp.Owner = sid;
-            dp.Delay = 10000;
+            dp.Delay = isOnInnerPlatform ? 0 : 10000;
 
             var change = @event["ActionId"] == "40467" ? -1 : 1;
             for (var i = 0; i < 5; i++)
@@ -911,7 +1268,7 @@ namespace KDrawScript.Dev
                 dp.Name = $"Active Pivot Particle Beam - {i}";
                 dp.Rotation = i * change * float.Pi * 0.125f + rot;
                 dp.FixRotation = true;
-                dp.DestoryAt = 4500 + i * 1500;
+                dp.DestoryAt = 4500 + i * 1500 + (isOnInnerPlatform ? 10000 : 0);
 
                 accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Straight, dp);
             }
@@ -1030,6 +1387,82 @@ namespace KDrawScript.Dev
         }
         
         /// <summary>
+        /// 输入实体id，判断是否带有内场Buff，判断在内场
+        /// </summary>
+        /// <param name="sa"></param>
+        /// <param name="entityId"></param>
+        /// <param name="innerPlatform">在内场</param>
+        /// <returns></returns>
+        private bool IsOnWhichPlatform(ScriptAccessory sa, ulong entityId, bool innerPlatform = true)
+        {
+            IPlayerCharacter? chara = (IPlayerCharacter?)sa.Data.Objects.SearchById(entityId);
+            if (chara == null)
+            {
+                sa.Log.Error($"输入的entityId {entityId} 未找到实例");
+                return false;
+            }
+            return chara.HasStatus(innerPlatform ? 4177u : 4178u);
+        }
+        
+        private bool IsOnInnerPlatform(ScriptAccessory sa, ulong entityId) => IsOnWhichPlatform(sa, entityId, true);
+        private bool IsOnSidePlatform(ScriptAccessory sa, ulong entityId) => IsOnWhichPlatform(sa, entityId, false);
+        
+        /// <summary>
+        /// 获得对应场地玩家字典
+        /// Key: EntityId
+        /// Value: (bool sameParty, int job(0:Tank, 1:Healer, 2:Dps, -1:Unknown), string name)
+        /// </summary>
+        /// <param name="sa"></param>
+        /// <param name="innerPlatform">是否是内场玩家</param>
+        /// <returns></returns>
+        private unsafe Dictionary<int, (bool, int, string, ulong, Vector3)> GetPlatformPlayers(ScriptAccessory sa, bool innerPlatform = true)
+        {
+            var innerPlayersDict = new Dictionary<int, (bool sameParty, int job, string name, ulong eid, Vector3 pos)>();
+            // 先找本队
+            for (int i = 0; i < sa.Data.PartyList.Count; i++)
+            {
+                // 不用foreach，避免/pdr leaveduty，导致IndexOutOfRange的崩游戏（？？？？？？）
+                var entityId = sa.Data.PartyList[i];
+                var chara = (IPlayerCharacter?)sa.Data.Objects.SearchById(entityId);
+                if (chara == null) continue;
+                if (innerPlatform ? !IsOnInnerPlatform(sa, entityId) : !IsOnSidePlatform(sa, entityId)) continue;
+
+                var job = chara.IsTank() ? 0 :
+                    chara.IsHealer() ? 1 :
+                    chara.IsDps() ? 2 :
+                    -1;
+                
+                // Dict的Key，为了与MemberIdx区分，+100
+                innerPlayersDict.Add(i + 100, (true, job, chara.Name.ToString(), entityId, chara.Position));
+            }
+            
+            // 再找团队
+            var group = GroupManager.Instance()->GetGroup(ReplayGroup);
+            for (var index = 0; index <= 1; index++)
+            {
+                for (var j = 0; j < 8; j++)
+                {
+                    var entityId = group->GetAllianceMemberByGroupAndIndex(index, j)->EntityId;
+                    var chara = (IPlayerCharacter?)sa.Data.Objects.SearchById(entityId);
+                    if (chara == null) continue;
+                    if (innerPlatform ? !IsOnInnerPlatform(sa, entityId) : !IsOnSidePlatform(sa, entityId)) continue;
+                    
+                    var job = chara.IsTank() ? 0 :
+                        chara.IsHealer() ? 1 :
+                        chara.IsDps() ? 2 :
+                        -1;
+
+                    innerPlayersDict.Add(j + 10 * (index + 1) + 100,
+                        (false, job, chara.Name.ToString(), entityId, chara.Position));
+                }
+            }
+            return innerPlayersDict;
+        }
+        
+        private Dictionary<int, (bool, int, string, ulong, Vector3)> GetInnerPlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, true);
+        private Dictionary<int, (bool, int, string, ulong, Vector3)> GetSidePlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, false);
+        
+        /// <summary>
         /// 返回箭头指引相关dp
         /// </summary>
         /// <param name="accessory"></param>
@@ -1088,6 +1521,183 @@ namespace KDrawScript.Dev
             object targetObj, int delay, int destroy, string name, float rotation = 0, float scale = 1f, bool isSafe = true)
             => DrawGuidance(accessory, (ulong)accessory.Data.Me, targetObj, delay, destroy, name, rotation, scale, isSafe);
 
+        public class PriorityDict
+        {
+            // ReSharper disable once NullableWarningSuppressionIsUsed
+            public ScriptAccessory sa { get; set; } = null!;
+
+            // ReSharper disable once NullableWarningSuppressionIsUsed
+            public Dictionary<int, int> Priorities { get; set; } = null!;
+            public string Annotation { get; set; } = "";
+            public int ActionCount { get; set; } = 0;
+
+            public void Init(ScriptAccessory accessory, string annotation, int partyNum = 8)
+            {
+                sa = accessory;
+                Priorities = new Dictionary<int, int>();
+                for (var i = 0; i < partyNum; i++)
+                {
+                    Priorities.Add(i, 0);
+                }
+
+                Annotation = annotation;
+                ActionCount = 0;
+            }
+
+            /// <summary>
+            /// 为特定Key增加优先级
+            /// </summary>
+            /// <param name="idx">key</param>
+            /// <param name="priority">优先级数值</param>
+            public void AddPriority(int idx, int priority)
+            {
+                Priorities[idx] += priority;
+            }
+
+            /// <summary>
+            /// 从Priorities中找到前num个数值最小的，得到新的Dict返回
+            /// </summary>
+            /// <param name="num"></param>
+            /// <returns></returns>
+            public List<KeyValuePair<int, int>> SelectSmallPriorityIndices(int num)
+            {
+                return SelectMiddlePriorityIndices(0, num);
+            }
+
+            /// <summary>
+            /// 从Priorities中找到前num个数值最大的，得到新的Dict返回
+            /// </summary>
+            /// <param name="num"></param>
+            /// <returns></returns>
+            public List<KeyValuePair<int, int>> SelectLargePriorityIndices(int num)
+            {
+                return SelectMiddlePriorityIndices(0, num, true);
+            }
+
+            /// <summary>
+            /// 从Priorities中找到升序排列中间的数值，得到新的Dict返回
+            /// </summary>
+            /// <param name="skip">跳过skip个元素。若从第二个开始取，skip=1</param>
+            /// <param name="num"></param>
+            /// <param name="descending">降序排列，默认为false</param>
+            /// <returns></returns>
+            public List<KeyValuePair<int, int>> SelectMiddlePriorityIndices(int skip, int num, bool descending = false)
+            {
+                if (Priorities.Count < skip + num)
+                    return new List<KeyValuePair<int, int>>();
+
+                IEnumerable<KeyValuePair<int, int>> sortedPriorities;
+                if (descending)
+                {
+                    // 根据值从大到小降序排序，并取前num个键
+                    sortedPriorities = Priorities
+                        .OrderByDescending(pair => pair.Value) // 先根据值排列
+                        .ThenBy(pair => pair.Key) // 再根据键排列
+                        .Skip(skip) // 跳过前skip个元素
+                        .Take(num); // 取前num个键值对
+                }
+                else
+                {
+                    // 根据值从小到大升序排序，并取前num个键
+                    sortedPriorities = Priorities
+                        .OrderBy(pair => pair.Value) // 先根据值排列
+                        .ThenBy(pair => pair.Key) // 再根据键排列
+                        .Skip(skip) // 跳过前skip个元素
+                        .Take(num); // 取前num个键值对
+                }
+
+                return sortedPriorities.ToList();
+            }
+
+            /// <summary>
+            /// 从Priorities中找到升序排列第idx位的数据，得到新的Dict返回
+            /// </summary>
+            /// <param name="idx"></param>
+            /// <param name="descending">降序排列，默认为false</param>
+            /// <returns></returns>
+            public KeyValuePair<int, int> SelectSpecificPriorityIndex(int idx, bool descending = false)
+            {
+                var sortedPriorities = SelectMiddlePriorityIndices(0, 8, descending);
+                return sortedPriorities[idx];
+            }
+
+            /// <summary>
+            /// 从Priorities中找到对应key的数据，得到其Value排序后位置返回
+            /// </summary>
+            /// <param name="key"></param>
+            /// <param name="descending">降序排列，默认为false</param>
+            /// <returns></returns>
+            public int FindPriorityIndexOfKey(int key, bool descending = false)
+            {
+                var sortedPriorities = SelectMiddlePriorityIndices(0, 8, descending);
+                var i = 0;
+                foreach (var dict in sortedPriorities)
+                {
+                    if (dict.Key == key) return i;
+                    i++;
+                }
+
+                return i;
+            }
+
+            /// <summary>
+            /// 一次性增加优先级数值
+            /// 通常适用于特殊优先级（如H-T-D-H）
+            /// </summary>
+            /// <param name="priorities"></param>
+            public void AddPriorities(List<int> priorities)
+            {
+                if (Priorities.Count != priorities.Count)
+                    throw new ArgumentException("输入的列表与内部设置长度不同");
+
+                for (var i = 0; i < Priorities.Count; i++)
+                    AddPriority(i, priorities[i]);
+            }
+
+            /// <summary>
+            /// 输出优先级字典的Key与优先级
+            /// </summary>
+            /// <returns></returns>
+            public string ShowPriorities(bool showJob = true)
+            {
+                var str = $"{Annotation} 优先级字典：\n";
+                foreach (var pair in Priorities)
+                {
+                    str += $"Key {pair.Key} {(showJob ? $"({_role[pair.Key]})" : "")}, Value {pair.Value}\n";
+                }
+
+                return str;
+            }
+            public PriorityDict DeepCopy()
+            {
+                return JsonConvert.DeserializeObject<PriorityDict>(JsonConvert.SerializeObject(this)) ??
+                       new PriorityDict();
+            }
+
+        }
+        
+        public unsafe static void SetTargetable(ScriptAccessory sa, IGameObject? obj, bool targetable)
+        {
+            if (obj == null || !obj.IsValid())
+            {
+                sa.Log.Error($"传入的IGameObject不合法。");
+                return;
+            }
+
+            GameObject* charaStruct = (GameObject*)obj.Address;
+            if (targetable)
+            {
+                if (obj.IsDead || obj.IsTargetable) return;
+                charaStruct->TargetableStatus |= ObjectTargetableFlags.IsTargetable;
+            }
+            else
+            {
+                if (!obj.IsTargetable) return;
+                charaStruct->TargetableStatus &= ~ObjectTargetableFlags.IsTargetable;
+            }
+            sa.Log.Debug($"SetTargetable {targetable} => {obj.Name} {obj}");
+        }
+        
         #endregion
     }
 }
