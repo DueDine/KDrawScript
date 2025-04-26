@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.6", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.7", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -892,6 +892,7 @@ namespace KDrawScript.Dev
                             if (index == 0 || index == 3) dp.TargetPosition = new(CenterA.X - 5, CenterA.Y, CenterA.Z);
                             else if (index == 4 || index == 6) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 5);
                             else if (index == 5 || index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 5);
+                            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                         }
                         else if (Party == PartyEnum.C)
                         {
@@ -899,8 +900,8 @@ namespace KDrawScript.Dev
                             if (index == 0 || index == 3) dp.TargetPosition = new(CenterC.X + 5, CenterC.Y, CenterC.Z);
                             else if (index == 4 || index == 6) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 5);
                             else if (index == 5 || index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 5);
+                            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                         }
-                        accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
                     if (HaveLoomingChaos && index >= 5) // Exchange
                     {
@@ -913,6 +914,7 @@ namespace KDrawScript.Dev
                             if (index == 5) dp.TargetPosition = new(CenterC.X, CenterA.Y, CenterC.Z - 5);
                             else if (index == 6) dp.TargetPosition = new(CenterC.X + 5, CenterC.Y, CenterC.Z);
                             else if (index == 7) dp.TargetPosition = new(CenterC.X, CenterC.Y, CenterC.Z + 5);
+                            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                         }
                         else if (Party == PartyEnum.C)
                         {
@@ -920,8 +922,8 @@ namespace KDrawScript.Dev
                             if (index == 5) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z + 5);
                             else if (index == 6) dp.TargetPosition = new(CenterA.X - 5, CenterA.Y, CenterA.Z);
                             else if (index == 7) dp.TargetPosition = new(CenterA.X, CenterA.Y, CenterA.Z - 5);
+                            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                         }
-                        accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
                     }
 
                     break;
