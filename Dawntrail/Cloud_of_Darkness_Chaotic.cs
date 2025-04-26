@@ -62,7 +62,7 @@ namespace KDrawScript.Dev
         private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
-        private bool HasShownMemberIdx = false;、
+        private bool HasShownMemberIdx = false;
         private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new(126, 0, 76)];
         private readonly List<Vector3> SeedPoint = [new(0, 0, 0), new(70, 0, 92), new(70, 0, 107), new(130, 0, 108), new(130, 0, 92)]; // Only A, C Party Each have two points
         private readonly Object SeedLock = new();
@@ -813,7 +813,7 @@ namespace KDrawScript.Dev
             dp.Scale = new Vector2(40);
             dp.InnerScale = new Vector2(34);
             dp.Radian = float.Pi * 2;
-            dp.Position = new Vector3(100, 0, 100);
+            dp.Position = Center;
             dp.Color = sa.Data.DefaultDangerColor;
             dp.Delay = 0;
             dp.DestoryAt = 5000;
@@ -1137,12 +1137,12 @@ namespace KDrawScript.Dev
                 // 获得玩家所在四角方位
                 var myChara = sa.Data.MyObject;
                 if (myChara == null) return;
-                var myDir = Position2Dirs(myChara.Position, new Vector3(100, 0, 100), 4, false);
+                var myDir = Position2Dirs(myChara.Position, Center, 4, false);
                 
                 // 获得目标所在四角方位
                 IPlayerCharacter? tchara = (IPlayerCharacter?)sa.Data.Objects.SearchById(ev.TargetId);
                 if (tchara == null) return;
-                var targetDir = Position2Dirs(tchara.Position, new Vector3(100, 0, 100), 4, false);
+                var targetDir = Position2Dirs(tchara.Position, Center, 4, false);
                 
                 // 如果玩家与目标所在方位不同，忽略
                 if (targetDir != myDir) return;
@@ -1190,7 +1190,7 @@ namespace KDrawScript.Dev
         {
             // 基准点，选取为方位0（右上）优先级低（近）点。
             Vector3 seedPlacePos = new Vector3(113.5f, 0f, 95.5f);
-            Vector3 center = new Vector3(100, 0, 100);
+            Vector3 center = Center;
             
             // 在另一侧则中心翻转
             if (dir >= 2)
