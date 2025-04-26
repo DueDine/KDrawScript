@@ -1,10 +1,13 @@
-﻿using ECommons;
+﻿using Dalamud.Utility.Numerics;
+using ECommons;
 using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using KodakkuAssist.Data;
 using KodakkuAssist.Extensions;
 using KodakkuAssist.Module.Draw;
+using KodakkuAssist.Module.Draw.Manager;
 using KodakkuAssist.Module.GameEvent;
 using KodakkuAssist.Script;
 using Newtonsoft.Json;
@@ -13,32 +16,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using KodakkuAssist.Module.Draw.Manager;
-using Dalamud.Utility.Numerics;
-using KodakkuAssist.Data;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.3", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.5", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
         """
-        当前仅有基础绘制。
-        仅有计划做 A/C 队 D2 - 4 指路 （即固定换到对方平台组）
+        当前仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
         若发生问题请携ARR反馈。
         """;
-        
+
         private const string UpdateInfo =
-            """
-            1. 添加了玩家处于场内/场外时，可选中/不可选中对应Boss的功能。
-            注：坦克必可选中中央大云Boss，保留场外坦克挑衅大云的救场操作。
-            2. 添加了暗之泛滥/暗之大泛滥读条时，第一次或身份组被改变时的身份设置提醒，可于用户设置内关闭。
-            """;
-        
-        private const bool Debugging = true;
-        private const bool ReplayGroup = true;
-        
+        """
+        1. 修复了P3小云正侧炮。
+        2. 内场组添加放种子前预站位。
+        3. 内场组添加回旋式波动炮预占位与返回位。
+        4. 若处于内场组，回旋式波动炮范围绘图直接出现。
+        5. 加入了内场地板的持续时间绘制。
+        6. 加入了踩塔指路。
+        """;
+
+        private const bool Debugging = false;
+        private const bool ReplayGroup = false;
+
         private static List<string> _role = ["MT", "ST", "H1", "H2", "D1", "D2", "D3", "D4"];
         private static List<string> _alliance = ["A", "B", "C"];
         private int _partyMemberIdx = -1;
@@ -60,8 +62,8 @@ namespace KDrawScript.Dev
         private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
-        private bool HasShownMemberIdx = false;
-        private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new (126, 0 , 76)];
+        private bool HasShownMemberIdx = false;、
+        private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new(126, 0, 76)];
         private readonly List<Vector3> SeedPoint = [new(0, 0, 0), new(70, 0, 92), new(70, 0, 107), new(130, 0, 108), new(130, 0, 92)]; // Only A, C Party Each have two points
         private readonly Object SeedLock = new();
         private readonly List<Vector3> TetherPointA = [new(67, 0, 93), new(80, 0, 95), new(80, 0, 104), new(67, 0, 106)];
@@ -70,6 +72,9 @@ namespace KDrawScript.Dev
         private readonly List<Vector3> SpreadPointA = [new(73.57f, 0, 105.46f), new(70.24f, 0, 105.06f), new(68.16f, 0, 103.41f), new(68.50f, 0, 98.08f), new(70.24f, 0, 96.12f), new(73.31f, 0, 96.32f)];
         private readonly Vector3 CenterC = new(126.50f, 0, 100);
         private readonly Vector3 CenterA = new(73.50f, 0, 100);
+        private readonly Vector3 Center = new(100, 0, 100);
+        private readonly Tiles TileInstance = new();
+        private readonly Towers TowerInstance = new();
         private readonly List<uint> SeedTarget = [];
         private int RazingRecord = 0;
         private bool EverDrawPhaser = false;
@@ -91,6 +96,12 @@ namespace KDrawScript.Dev
 
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
         public bool SpecialText { get; set; } = false;
+
+        [UserSetting(note: "是否开启内场地板绘制")]
+        public bool DrawTiles { get; set; } = false;
+
+        [UserSetting(note: "是否开启实验性踩塔指路")]
+        public bool DrawTowers { get; set; } = false;
 
         public enum PartyEnum
         {
@@ -119,15 +130,15 @@ namespace KDrawScript.Dev
             EverDrawPhaser = false;
             accessory.Method.RemoveDraw(".*");
         }
-        
+
         #region TestRegion
-        
+
         [ScriptMethod(name: "---- 测试项 ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public void SplitLine_TestRegion(Event ev, ScriptAccessory sa)
         {
         }
-        
+
         [ScriptMethod(name: "测试 我在内场还是外场", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public void LocateAtWhichPlatform(Event ev, ScriptAccessory sa)
@@ -137,7 +148,7 @@ namespace KDrawScript.Dev
             str += $"{(IsOnSidePlatform(sa, sa.Data.Me) ? "在外场" : "不在外场")}";
             sa.Log.Debug(str);
         }
-        
+
         [ScriptMethod(name: "测试 我是谁", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public void WhoAmI(Event ev, ScriptAccessory sa)
@@ -145,7 +156,7 @@ namespace KDrawScript.Dev
             var myMemberIdx = GetMemberIdx(sa);
             sa.Log.Debug($"你的身份为，【{_alliance[myMemberIdx / 10]} 队 {_role[myMemberIdx % 10]}】");
         }
-        
+
         [ScriptMethod(name: "测试 获得内场玩家", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public void PrintInnerPlatformPlayers(Event ev, ScriptAccessory sa)
@@ -160,7 +171,7 @@ namespace KDrawScript.Dev
                     $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
             }
         }
-        
+
         [ScriptMethod(name: "测试 获得外场玩家", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public void PrintSidePlatformPlayers(Event ev, ScriptAccessory sa)
@@ -175,7 +186,7 @@ namespace KDrawScript.Dev
                     $" {player.Value.Item3}, eid {player.Value.Item4:x8}, 位置 {player.Value.Item5}");
             }
         }
-        
+
         [ScriptMethod(name: "测试 翻转大云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public unsafe void ToggleCloudsTargetable(Event ev, ScriptAccessory sa)
@@ -189,7 +200,7 @@ namespace KDrawScript.Dev
             SetTargetable(sa, cloudChara, !cloudChara.IsTargetable);
             sa.Log.Debug($"已翻转大云可选中状态。");
         }
-        
+
         [ScriptMethod(name: "测试 翻转小云可选中状态", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: Debugging)]
         public unsafe void ToggleShadowsTargetable(Event ev, ScriptAccessory sa)
@@ -226,16 +237,17 @@ namespace KDrawScript.Dev
             sa.Log.Debug(str);
         }
         
+
         #endregion TestRegion
-        
+
         #region P1
-        
+
         [ScriptMethod(name: "---- Phase Diamond ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: true)]
         public void SplitLine_Phase2(Event ev, ScriptAccessory sa)
         {
         }
-        
+
         [ScriptMethod(name: "阶段转换 - 钻石", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40509"],
             userControl: Debugging)]
         public void PhaseChange_P2(Event ev, ScriptAccessory sa)
@@ -254,7 +266,7 @@ namespace KDrawScript.Dev
                     SendText("AOE", sa);
             }
         }
-        
+
         [ScriptMethod(name: "Blade of Darkness 左右小月环及钢铁", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4044[468])$"])]
         public void BladeofDarkness(Event @event, ScriptAccessory accessory)
         {
@@ -431,7 +443,7 @@ namespace KDrawScript.Dev
             dp.Owner = tid;
             dp.Delay = int.Parse(@event["DurationMilliseconds"]) - 7000;
             dp.DestoryAt = 7000;
-            
+
             if (tid != accessory.Data.Me)
             {
                 dp.Delay = int.Parse(@event["DurationMilliseconds"]) - 3000;
@@ -523,7 +535,7 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     break;
             }
-            
+
             Task.Delay(200).ContinueWith(t =>
                 {
                     if (HaveMitigation(accessory)) return;
@@ -612,7 +624,7 @@ namespace KDrawScript.Dev
             // dp.DestoryAt = 4000;
             //
             // accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
-            
+
             var sid = @event.SourceId;
             var dp = accessory.Data.GetDefaultDrawProperties();
             dp.Name = "BreakEye";
@@ -621,18 +633,18 @@ namespace KDrawScript.Dev
             dp.TargetObject = sid;
             dp.Delay = 0;
             dp.DestoryAt = 4000;
-            
+
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.SightAvoid, dp);
         }
         #endregion
         #region P2
-        
+
         [ScriptMethod(name: "---- Phase Tilt ----", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
             userControl: true)]
         public void SplitLine_Phase3(Event ev, ScriptAccessory sa)
         {
         }
-        
+
         [ScriptMethod(name: "阶段转换 - 三重", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
             userControl: Debugging)]
         public void PhaseChange_P3(Event ev, ScriptAccessory sa)
@@ -662,7 +674,7 @@ namespace KDrawScript.Dev
                 sa.Log.Debug($"获得MemberIdx错误，可能该目标非我队队员");
                 return;
             }
-            
+
             Vector3 safePos = myMemberIdx switch
             {
                 10 => GetBlockField(7, 3),  // B-MT
@@ -673,7 +685,7 @@ namespace KDrawScript.Dev
                 15 => GetBlockField(3, 7),  // B-D2
                 16 => GetBlockField(8, 2),  // B-D3
                 17 => GetBlockField(8, 7),  // B-D4
-                
+
                 2 => GetBlockField(1, 2),   // A-H1
                 1 => GetBlockField(2, 3),   // A-ST
                 22 => GetBlockField(1, 7),  // C-H1
@@ -692,7 +704,7 @@ namespace KDrawScript.Dev
                 dp0.Color = sa.Data.DefaultSafeColor;
                 sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp0);
             }
-            
+
             else
             {
                 safePos = (myMemberIdx / 10) switch
@@ -702,14 +714,14 @@ namespace KDrawScript.Dev
                     _ => new Vector3(0, 0, 0),
                 };
             }
-            
+
             if (safePos == new Vector3(0, 0, 0)) return;
 
             var dp = DrawGuidance(sa, safePos, 0, 7500, "初始位置");
             sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
             sa.Log.Debug($"获得{myMemberIdx}的初始位置{safePos}");
         }
-        
+
         private int GetMemberIdx(ScriptAccessory sa)
         {
             try
@@ -724,7 +736,8 @@ namespace KDrawScript.Dev
                 var myIndex = sa.Data.PartyList.IndexOf(sa.Data.Me);
                 if (myIndex == -1) return -1;
                 return myParty + myIndex;
-            } catch { return -1; }
+            }
+            catch { return -1; }
         }
         
         [ScriptMethod(name: "等待小云出现并可选中", eventType: EventTypeEnum.PlayActionTimeline, eventCondition: ["SourceDataId:17951", "Id:7747"],
@@ -998,14 +1011,14 @@ namespace KDrawScript.Dev
                     break;
             }
         }
-        
-        [ScriptMethod(name: "Evil Seed Prepared Position 场内放种子前就位", 
+
+        [ScriptMethod(name: "Evil Seed Prepared Position 场内放种子前就位",
             eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40490"],
             suppress: 10000, userControl: true)]
         public void EvilSeedPreparedPosition(Event ev, ScriptAccessory sa)
         {
             if (_codPhase != CodPhase.Tilt) return;
-            
+
             // suppress 10000，该技能为场边两只小云的读条，避免执行两次
             var myMemberIdx = GetMemberIdx(sa);
             if (myMemberIdx == -1)
@@ -1013,14 +1026,14 @@ namespace KDrawScript.Dev
                 sa.Log.Debug($"获得MemberIdx错误，可能该目标非我队队员");
                 return;
             }
-            
+
             // 获得玩家状态，是否带有InnerDarkness状态
             if (!IsOnInnerPlatform(sa, sa.Data.Me))
             {
                 sa.Log.Debug($"玩家不在场中平台上，真可怜！");
                 return;
             }
-            
+
             Vector3 readyPos = myMemberIdx switch
             {
                 10 => GetBlockField(7, 3),  // B-MT
@@ -1031,14 +1044,14 @@ namespace KDrawScript.Dev
                 15 => GetBlockField(2, 8),  // B-D2
                 16 => GetBlockField(8, 2),  // B-D3
                 17 => GetBlockField(8, 7),  // B-D4
-                
+
                 2 => GetBlockField(1, 2),   // A-H1
                 1 => GetBlockField(2, 3),   // A-ST
                 22 => GetBlockField(1, 7),  // C-H1
                 21 => GetBlockField(2, 6),  // C-ST
                 _ => new Vector3(0, 0, 0),
             };
-            
+
             sa.Method.TextInfo("放种子前就位", 4000, false);
 
             if (readyPos == new Vector3(0, 0, 0))
@@ -1046,7 +1059,7 @@ namespace KDrawScript.Dev
                 sa.Log.Debug($"不应在场内的玩家却出现在了场内，真可怜！");
                 return;
             }
-            
+
             // 画方格
             var dp0 = sa.Data.GetDefaultDrawProperties();
             dp0.Name = $"方格{myMemberIdx}";
@@ -1062,7 +1075,7 @@ namespace KDrawScript.Dev
             sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
             sa.Log.Debug($"获得{myMemberIdx}的放种子就位位置{readyPos}");
         }
-        
+
         [ScriptMethod(name: "Evil Seed 放种子绘制", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0227"])]
         public void EvilSeed(Event @event, ScriptAccessory accessory)
         {
@@ -1269,7 +1282,7 @@ namespace KDrawScript.Dev
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
         }
-        
+
         [ScriptMethod(name: "Pivot Particle Beam 内场回旋式波动炮就位提示", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4046[79])$"],
             userControl: true)]
         public void P3PivotBeamGuidance(Event ev, ScriptAccessory sa)
@@ -1286,22 +1299,22 @@ namespace KDrawScript.Dev
                 2 => bottomLeftSafe ? [GetBlockField(2, 6), GetBlockField(1, 2)] : [GetBlockField(1, 2), GetBlockField(1, 2)], // AH1
                 1 => bottomLeftSafe ? [GetBlockField(2, 7), GetBlockField(2, 3)] : [GetBlockField(2, 1), GetBlockField(2, 3)], // AST
                 14 => bottomLeftSafe ? [GetBlockField(2, 5), GetBlockField(3, 2)] : [GetBlockField(3, 2), GetBlockField(3, 2)], // BD1
-                
+
                 // BOTTOM RIGHT
                 13 => bottomLeftSafe ? [GetBlockField(7, 3), GetBlockField(6, 7)] : [GetBlockField(6, 7), GetBlockField(6, 7)], // BH2
                 11 => bottomLeftSafe ? [GetBlockField(7, 2), GetBlockField(7, 6)] : [GetBlockField(7, 8), GetBlockField(7, 6)], // BST
                 17 => bottomLeftSafe ? [GetBlockField(7, 4), GetBlockField(8, 7)] : [GetBlockField(8, 7), GetBlockField(8, 7)], // BD4
-                
+
                 // UP RIGHT
                 22 => bottomLeftSafe ? [GetBlockField(1, 7), GetBlockField(1, 7)] : [GetBlockField(2, 3), GetBlockField(1, 7)], // CH1
                 21 => bottomLeftSafe ? [GetBlockField(2, 8), GetBlockField(2, 6)] : [GetBlockField(2, 2), GetBlockField(2, 6)], // CST
                 15 => bottomLeftSafe ? [GetBlockField(3, 7), GetBlockField(3, 7)] : [GetBlockField(2, 4), GetBlockField(3, 7)], // BD2
-                
+
                 // BOTTOM LEFT
                 12 => bottomLeftSafe ? [GetBlockField(6, 2), GetBlockField(6, 2)] : [GetBlockField(7, 6), GetBlockField(6, 2)], // BH1
                 10 => bottomLeftSafe ? [GetBlockField(7, 1), GetBlockField(7, 3)] : [GetBlockField(7, 7), GetBlockField(7, 3)], // BMT
                 16 => bottomLeftSafe ? [GetBlockField(8, 2), GetBlockField(8, 2)] : [GetBlockField(7, 5), GetBlockField(8, 2)], // BD3
-                
+
                 _ => []
             };
 
@@ -1310,7 +1323,7 @@ namespace KDrawScript.Dev
                 sa.Log.Debug($"不属于场内人员却出现在了场内，需灵性处理，不作指路。");
                 return;
             }
-            
+
             // 第一轮绘图，就位位置
             // 画方格
             var dp0 = sa.Data.GetDefaultDrawProperties();
@@ -1326,7 +1339,7 @@ namespace KDrawScript.Dev
             var dp = DrawGuidance(sa, pos[0], 0, 14500, "旋转波动炮就位位置");
             sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
             sa.Log.Debug($"获得波动炮{(bottomLeftSafe ? "左下/右上安全" : "右下/左上安全")}的就位位置{pos[0]}");
-            
+
             // 第二轮绘图，就位位置
             // 画方格
             var dp01 = sa.Data.GetDefaultDrawProperties();
@@ -1406,7 +1419,7 @@ namespace KDrawScript.Dev
         public void ActivePivotParticleBeam(Event @event, ScriptAccessory accessory)
         {
             if (!ParseObjectId(@event["SourceId"], out var sid)) return;
-            
+
             bool isOnInnerPlatform = IsOnInnerPlatform(accessory, accessory.Data.Me);
 
             var dp = accessory.Data.GetDefaultDrawProperties();
@@ -1433,6 +1446,51 @@ namespace KDrawScript.Dev
 
         [ScriptMethod(name: "Looming Chaos", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:41673"], userControl: false)]
         public void LoomingChaosMark(Event @event, ScriptAccessory accessory) => HaveLoomingChaos = true;
+
+        [ScriptMethod(name: "EnvControl 杂烩", eventType: EventTypeEnum.EnvControl)]
+        public void EnvControl(Event @event, ScriptAccessory accessory)
+        {
+            try
+            {
+                var Index = int.Parse(@event["Index"]);
+                var Flag = int.Parse(@event["Flag"]);
+
+                if (DrawTiles)
+                {
+                    if (accessory.Data.MyObject.HasStatus(4177))
+                    {
+
+                        if (Index < 3 || Index > 30) return; // Between 0x03 - 0x1E
+                                                             // Flags: Init 2048 Occupied 32 Free 512 Danger 128 Break 8
+                        if (Flag == 512 || Flag == 8) TileInstance.CancelDraw(Index, accessory);
+                        if (Flag == 32) TileInstance.StartDraw(Index, accessory);
+                        if (Flag == 128) TileInstance.StartDraw(Index, accessory, true);
+                    }
+                }
+                if (DrawTowers)
+                {
+                    if (accessory.Data.MyObject.HasStatus(4178))
+                    {
+                        if (Index < 0x3F || Index > 0x46) return; // Between 63 - 70 4 Active Towers
+                                                                  // Flags Appear 2 Disappear 8
+                        if (Flag == 8) TowerInstance.CancelDraw(Index, accessory);
+                        if (Flag == 2)
+                        {
+                            if (TowerInstance.IsMyTower(accessory, Index, Party, HaveLoomingChaos))
+                                TowerInstance.StartDraw(Index, accessory);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+        }
+
+        [ScriptMethod(name: "Cancel Tiles", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40455"], userControl: false)]
+        public void CancelTiles(Event @event, ScriptAccessory accessory) => TileInstance.CancelAll(accessory);
+
 
         #endregion
 
@@ -1526,7 +1584,7 @@ namespace KDrawScript.Dev
             var threshold = 20;
             return Vector3.Distance(myPosition, targetPosition) < threshold;
         }
-        
+
         /// <summary>
         /// 获得P3场地第row排第col列的中心坐标
         /// </summary>
@@ -1539,7 +1597,7 @@ namespace KDrawScript.Dev
             Vector3 centerTriple = new(100, 0, 100);
             return centerTriple + new Vector3(6 * (col - 4) - 3, 0, 6 * (row - 4) - 3);
         }
-        
+
         /// <summary>
         /// 输入实体id，判断是否带有内场Buff，判断在内场
         /// </summary>
@@ -1557,10 +1615,10 @@ namespace KDrawScript.Dev
             }
             return chara.HasStatus(innerPlatform ? 4177u : 4178u);
         }
-        
+
         private bool IsOnInnerPlatform(ScriptAccessory sa, ulong entityId) => IsOnWhichPlatform(sa, entityId, true);
         private bool IsOnSidePlatform(ScriptAccessory sa, ulong entityId) => IsOnWhichPlatform(sa, entityId, false);
-        
+
         /// <summary>
         /// 获得对应场地玩家字典
         /// Key: EntityId
@@ -1585,11 +1643,11 @@ namespace KDrawScript.Dev
                     chara.IsHealer() ? 1 :
                     chara.IsDps() ? 2 :
                     -1;
-                
+
                 // Dict的Key，为了与MemberIdx区分，+100
                 innerPlayersDict.Add(i + 100, (true, job, chara.Name.ToString(), entityId, chara.Position));
             }
-            
+
             // 再找团队
             var group = GroupManager.Instance()->GetGroup(ReplayGroup);
             for (var index = 0; index <= 1; index++)
@@ -1600,7 +1658,7 @@ namespace KDrawScript.Dev
                     var chara = (IPlayerCharacter?)sa.Data.Objects.SearchById(entityId);
                     if (chara == null) continue;
                     if (innerPlatform ? !IsOnInnerPlatform(sa, entityId) : !IsOnSidePlatform(sa, entityId)) continue;
-                    
+
                     var job = chara.IsTank() ? 0 :
                         chara.IsHealer() ? 1 :
                         chara.IsDps() ? 2 :
@@ -1612,10 +1670,10 @@ namespace KDrawScript.Dev
             }
             return innerPlayersDict;
         }
-        
+
         private Dictionary<int, (bool, int, string, ulong, Vector3)> GetInnerPlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, true);
         private Dictionary<int, (bool, int, string, ulong, Vector3)> GetSidePlatformPlayers(ScriptAccessory sa) => GetPlatformPlayers(sa, false);
-        
+
         /// <summary>
         /// 返回箭头指引相关dp
         /// </summary>
@@ -1670,7 +1728,7 @@ namespace KDrawScript.Dev
 
             return dp;
         }
-        
+
         public static DrawPropertiesEdit DrawGuidance(ScriptAccessory accessory,
             object targetObj, int delay, int destroy, string name, float rotation = 0, float scale = 1f, bool isSafe = true)
             => DrawGuidance(accessory, (ulong)accessory.Data.Me, targetObj, delay, destroy, name, rotation, scale, isSafe);
@@ -1834,7 +1892,7 @@ namespace KDrawScript.Dev
             }
 
         }
-        
+
         public unsafe static void SetTargetable(ScriptAccessory sa, IGameObject? obj, bool targetable)
         {
             if (obj == null || !obj.IsValid())
@@ -1874,6 +1932,196 @@ namespace KDrawScript.Dev
             return (int)r;
         }
         
+
+        // Courtesy of BMR
+        public class Tiles
+        {
+            // - index arrangement:
+            //      04             0B
+            //   03 05 06 07 0E 0D 0C 0A
+            //      08             0F
+            //      09             10
+            //      17             1E
+            //      16             1D
+            //   11 13 14 15 1C 1B 1A 18
+            //      12             19
+            // From 03 - 1E, total of 28 tiles
+
+            private readonly Dictionary<int, (int x, int y)> _cellIndexToCoordinates = GenerateCellIndexToCoordinates();
+            private uint BossId = 0;
+
+            public void InitOwner(ScriptAccessory accessory) => BossId = accessory.Data.Objects.GetByDataId(0x461e).FirstOrDefault()?.EntityId ?? 0;
+
+            private static int CellIndex(int x, int y) => (x, y) switch
+            {
+                (-4, -3) => 0x03,
+                (-3, -4) => 0x04,
+                (-3, -3) => 0x05,
+                (-2, -3) => 0x06,
+                (-1, -3) => 0x07,
+                (-3, -2) => 0x08,
+                (-3, -1) => 0x09,
+                (+3, -3) => 0x0A,
+                (+2, -4) => 0x0B,
+                (+2, -3) => 0x0C,
+                (+1, -3) => 0x0D,
+                (+0, -3) => 0x0E,
+                (+2, -2) => 0x0F,
+                (+2, -1) => 0x10,
+                (-4, +2) => 0x11,
+                (-3, +3) => 0x12,
+                (-3, +2) => 0x13,
+                (-2, +2) => 0x14,
+                (-1, +2) => 0x15,
+                (-3, +1) => 0x16,
+                (-3, +0) => 0x17,
+                (+3, +2) => 0x18,
+                (+2, +3) => 0x19,
+                (+2, +2) => 0x1A,
+                (+1, +2) => 0x1B,
+                (+0, +2) => 0x1C,
+                (+2, +1) => 0x1D,
+                (+2, +0) => 0x1E,
+                _ => 0
+            };
+
+            private static Dictionary<int, (int x, int y)> GenerateCellIndexToCoordinates()
+            {
+                var map = new Dictionary<int, (int x, int y)>();
+                for (var x = -4; x <= 3; ++x)
+                {
+                    for (var y = -4; y <= 3; ++y)
+                    {
+                        var index = CellIndex(x, y);
+                        if (index >= 0)
+                            map[index] = (x, y);
+                    }
+                }
+                return map;
+            }
+
+            private Vector3 CellCenter(int breakTimeIndex)
+            {
+                // var cellIndex = breakTimeIndex + 3; // We use it as-is.
+                var cellIndex = breakTimeIndex;
+                if (_cellIndexToCoordinates.TryGetValue(cellIndex, out var coordinates))
+                {
+                    var worldX = (coordinates.x + 0.5f) * 6f;
+                    var worldZ = (coordinates.y + 0.5f) * 6f;
+                    return new Vector3(100 + worldX, 0, 100 + worldZ);
+                }
+                else
+                    return default;
+            }
+
+            private bool NeedToDraw(ScriptAccessory accessory, Vector3 target) => Vector3.Distance(accessory.Data.MyObject.Position, target) < 20f;
+
+            public void StartDraw(int index, ScriptAccessory accessory, bool isDanger = false)
+            {
+                if (!NeedToDraw(accessory, CellCenter(index))) return;
+                var dp = accessory.Data.GetDefaultDrawProperties();
+                dp.Name = $"Tiles - {index}";
+                dp.Color = new Vector4(1.0f, 1.0f, 0.0f, 1.0f);
+                if (isDanger) dp.Color = accessory.Data.DefaultDangerColor;
+                dp.ScaleMode = ScaleMode.ByTime;
+                dp.Scale = new(6, 6);
+                dp.Owner = BossId;
+                dp.DestoryAt = 38 * 1000;
+                if (isDanger) dp.DestoryAt = 6000;
+                dp.Position = CellCenter(index);
+                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp);
+            }
+
+            public void CancelDraw(int index, ScriptAccessory accessory) => accessory.Method.RemoveDraw($"Tiles - {index}");
+
+            public void CancelAll(ScriptAccessory accessory) => accessory.Method.RemoveDraw($"Tiles - .*");
+
+        }
+
+        // Also BMR
+        public class Towers
+        {
+            // 3-man only
+            // - arrangement:
+            //     3F         43
+            //   42  40     44  46
+            //     41         45
+
+            private readonly List<int> LeftSideTower = [0x3F, 0x40, 0x41, 0x42];
+            private readonly List<int> RightSideTower = [0x43, 0x44, 0x45, 0x46];
+            private readonly List<int> LeftMTGroup = [0x41, 0x42];
+            private readonly List<int> RightMTGroup = [0x43, 0x46];
+            private readonly List<int> LeftSTGroup = [0x3F, 0x40];
+            private readonly List<int> RightSTGroup = [0x44, 0x45];
+
+            private Vector3 TowerCenter(int index)
+            {
+                var offset = index switch
+                {
+                    0x3F => new Vector3(-26.5f, 0, -4.5f),
+                    0x40 => new Vector3(-22f, 0, 0f),
+                    0x41 => new Vector3(-26.5f, 0, 4.5f),
+                    0x42 => new Vector3(-31f, 0, 0f),
+                    0x43 => new Vector3(26.5f, 0, -4.5f),
+                    0x44 => new Vector3(22f, 0, 0f),
+                    0x45 => new Vector3(26.5f, 0, 4.5f),
+                    0x46 => new Vector3(31f, 0, 0f),
+                    _ => Vector3.Zero,
+                };
+
+                return new Vector3(100 + offset.X, 0, 100 + offset.Z);
+            }
+
+            public bool IsMyTower(ScriptAccessory accessory, int index, PartyEnum party, bool afterSwap)
+            {
+                if (party == PartyEnum.B || party == PartyEnum.None) return false;
+                if ((party == PartyEnum.A && !afterSwap) ||
+                    (party == PartyEnum.C && afterSwap))
+                {
+                    if (!LeftSideTower.Contains(index)) return false;
+                    var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+                    if (idx < 5 && afterSwap) return false;
+                    if (!afterSwap)
+                    {
+                        if (idx % 2 == 0 && idx != 2) return LeftMTGroup.Contains(index);
+                        if (idx % 2 == 1 && idx != 3) return LeftSTGroup.Contains(index);
+                    }
+                    return LeftSTGroup.Contains(index);
+                }
+
+                if ((party == PartyEnum.A && afterSwap) ||
+                    (party == PartyEnum.C && !afterSwap))
+                {
+                    if (!RightSideTower.Contains(index)) return false;
+                    var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+                    if (idx < 5 && afterSwap) return false;
+                    if (!afterSwap)
+                    {
+                        if (idx % 2 == 0 && idx != 2) return RightMTGroup.Contains(index);
+                        if (idx % 2 == 1 && idx != 3) return RightSTGroup.Contains(index);
+                    }
+                    return RightSTGroup.Contains(index);
+                }
+                return false;
+            }
+
+            public void StartDraw(int index, ScriptAccessory accessory)
+            {
+                accessory.Log.Debug($"开始绘制塔{index}");
+                var dp = accessory.Data.GetDefaultDrawProperties();
+                dp.Name = $"Tower - {index}";
+                dp.Color = accessory.Data.DefaultSafeColor;
+                dp.ScaleMode = ScaleMode.ByTime;
+                dp.Scale = new(3);
+                dp.Owner = accessory.Data.Me;
+                dp.DestoryAt = 10000;
+                dp.Position = TowerCenter(index);
+                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Circle, dp);
+            }
+
+            public void CancelDraw(int index, ScriptAccessory accessory) => accessory.Method.RemoveDraw($"Tower - {index}");
+        }
+
         #endregion
     }
 }
