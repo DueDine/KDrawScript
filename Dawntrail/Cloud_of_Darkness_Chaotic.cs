@@ -19,24 +19,24 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.4", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.5", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
         """
-        当前仅有基础绘制。
-        仅有计划做 A/C 队 D2 - 4 指路 （即固定换到对方平台组）
+        当前仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
         若发生问题请携ARR反馈。
         """;
 
         private const string UpdateInfo =
-            """
-            1. 修复了P3小云正侧炮。
-            2. 内场组添加放种子前预站位。
-            3. 内场组添加回旋式波动炮预占位与返回位。
-            4. 若处于内场组，回旋式波动炮范围绘图直接出现。
-            5. 加入了内场地板的持续时间绘制
-            """;
+        """
+        1. 修复了P3小云正侧炮。
+        2. 内场组添加放种子前预站位。
+        3. 内场组添加回旋式波动炮预占位与返回位。
+        4. 若处于内场组，回旋式波动炮范围绘图直接出现。
+        5. 加入了内场地板的持续时间绘制。
+        6. 加入了踩塔指路。
+        """;
 
         private const bool Debugging = false;
         private const bool ReplayGroup = false;
@@ -71,7 +71,8 @@ namespace KDrawScript.Dev
         private readonly Vector3 CenterC = new(126.50f, 0, 100);
         private readonly Vector3 CenterA = new(73.50f, 0, 100);
         private readonly Vector3 Center = new(100, 0, 100);
-        private Tiles TileInstance = new();
+        private readonly Tiles TileInstance = new();
+        private readonly Towers TowerInstance = new();
         private readonly List<uint> SeedTarget = [];
         private int RazingRecord = 0;
         private bool EverDrawPhaser = false;
@@ -93,6 +94,9 @@ namespace KDrawScript.Dev
 
         [UserSetting(note: "是否开启内场地板绘制")]
         public bool DrawTiles { get; set; } = false;
+
+        [UserSetting(note: "是否开启实验性踩塔指路")]
+        public bool DrawTowers { get; set; } = false;
 
         public enum PartyEnum
         {
@@ -1293,14 +1297,42 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "EnvControl 杂烩", eventType: EventTypeEnum.EnvControl)]
         public void EnvControl(Event @event, ScriptAccessory accessory)
         {
-            if (!DrawTiles) return;
-            var Index = int.Parse(@event["Index"]);
-            var Flag = int.Parse(@event["Flag"]);
-            if (Index < 3 || Index > 30) return; // Between 0x03 - 0x1E
-            // Flags: Init 2048 Occupied 32 Free 512 Danger 128 Break 8
-            if (Flag == 512 || Flag == 8) TileInstance.CancelDraw(Index, accessory);
-            if (Flag == 32) TileInstance.StartDraw(Index, accessory);
-            if (Flag == 128) TileInstance.StartDraw(Index, accessory, true);
+            try
+            {
+                var Index = int.Parse(@event["Index"]);
+                var Flag = int.Parse(@event["Flag"]);
+
+                if (DrawTiles)
+                {
+                    if (accessory.Data.MyObject.HasStatus(4177))
+                    {
+
+                        if (Index < 3 || Index > 30) return; // Between 0x03 - 0x1E
+                                                             // Flags: Init 2048 Occupied 32 Free 512 Danger 128 Break 8
+                        if (Flag == 512 || Flag == 8) TileInstance.CancelDraw(Index, accessory);
+                        if (Flag == 32) TileInstance.StartDraw(Index, accessory);
+                        if (Flag == 128) TileInstance.StartDraw(Index, accessory, true);
+                    }
+                }
+                if (DrawTowers)
+                {
+                    if (accessory.Data.MyObject.HasStatus(4178))
+                    {
+                        if (Index < 0x3F || Index > 0x46) return; // Between 63 - 70 4 Active Towers
+                                                                  // Flags Appear 2 Disappear 8
+                        if (Flag == 8) TowerInstance.CancelDraw(Index, accessory);
+                        if (Flag == 2)
+                        {
+                            if (TowerInstance.IsMyTower(accessory, Index, Party, HaveLoomingChaos))
+                                TowerInstance.StartDraw(Index, accessory);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
         }
 
         [ScriptMethod(name: "Cancel Tiles", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40455"], userControl: false)]
@@ -1828,6 +1860,90 @@ namespace KDrawScript.Dev
 
             public void CancelAll(ScriptAccessory accessory) => accessory.Method.RemoveDraw($"Tiles - .*");
 
+        }
+
+        // Also BMR
+        public class Towers
+        {
+            // 3-man only
+            // - arrangement:
+            //     3F         43
+            //   42  40     44  46
+            //     41         45
+
+            private readonly List<int> LeftSideTower = [0x3F, 0x40, 0x41, 0x42];
+            private readonly List<int> RightSideTower = [0x43, 0x44, 0x45, 0x46];
+            private readonly List<int> LeftMTGroup = [0x41, 0x42];
+            private readonly List<int> RightMTGroup = [0x43, 0x46];
+            private readonly List<int> LeftSTGroup = [0x3F, 0x40];
+            private readonly List<int> RightSTGroup = [0x44, 0x45];
+
+            private Vector3 TowerCenter(int index)
+            {
+                var offset = index switch
+                {
+                    0x3F => new Vector3(-26.5f, 0, -4.5f),
+                    0x40 => new Vector3(-22f, 0, 0f),
+                    0x41 => new Vector3(-26.5f, 0, 4.5f),
+                    0x42 => new Vector3(-31f, 0, 0f),
+                    0x43 => new Vector3(26.5f, 0, -4.5f),
+                    0x44 => new Vector3(22f, 0, 0f),
+                    0x45 => new Vector3(26.5f, 0, 4.5f),
+                    0x46 => new Vector3(31f, 0, 0f),
+                    _ => Vector3.Zero,
+                };
+
+                return new Vector3(100 + offset.X, 0, 100 + offset.Z);
+            }
+
+            public bool IsMyTower(ScriptAccessory accessory, int index, PartyEnum party, bool afterSwap)
+            {
+                if (party == PartyEnum.B || party == PartyEnum.None) return false;
+                if ((party == PartyEnum.A && !afterSwap) ||
+                    (party == PartyEnum.C && afterSwap))
+                {
+                    if (!LeftSideTower.Contains(index)) return false;
+                    var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+                    if (idx < 5 && afterSwap) return false;
+                    if (!afterSwap)
+                    {
+                        if (idx % 2 == 0 && idx != 2) return LeftMTGroup.Contains(index);
+                        if (idx % 2 == 1 && idx != 3) return LeftSTGroup.Contains(index);
+                    }
+                    return LeftSTGroup.Contains(index);
+                }
+
+                if ((party == PartyEnum.A && afterSwap) ||
+                    (party == PartyEnum.C && !afterSwap))
+                {
+                    if (!RightSideTower.Contains(index)) return false;
+                    var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
+                    if (idx < 5 && afterSwap) return false;
+                    if (!afterSwap)
+                    {
+                        if (idx % 2 == 0 && idx != 2) return RightMTGroup.Contains(index);
+                        if (idx % 2 == 1 && idx != 3) return RightSTGroup.Contains(index);
+                    }
+                    return RightSTGroup.Contains(index);
+                }
+                return false;
+            }
+
+            public void StartDraw(int index, ScriptAccessory accessory)
+            {
+                accessory.Log.Debug($"开始绘制塔{index}");
+                var dp = accessory.Data.GetDefaultDrawProperties();
+                dp.Name = $"Tower - {index}";
+                dp.Color = accessory.Data.DefaultSafeColor;
+                dp.ScaleMode = ScaleMode.ByTime;
+                dp.Scale = new(3);
+                dp.Owner = accessory.Data.Me;
+                dp.DestoryAt = 10000;
+                dp.Position = TowerCenter(index);
+                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Circle, dp);
+            }
+
+            public void CancelDraw(int index, ScriptAccessory accessory) => accessory.Method.RemoveDraw($"Tower - {index}");
         }
 
         #endregion
