@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.5", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.6", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -97,6 +97,9 @@ namespace KDrawScript.Dev
 
         [UserSetting(note: "是否开启实验性踩塔指路")]
         public bool DrawTowers { get; set; } = false;
+
+        [UserSetting(note: "即使使用防击退也显示指示")]
+        public bool AlwaysShowDisplacement { get; set; } = false;
 
         public enum PartyEnum
         {
@@ -1408,6 +1411,7 @@ namespace KDrawScript.Dev
 
         private bool HaveMitigation(ScriptAccessory accessory)
         {
+            if (AlwaysShowDisplacement) return false;
             return accessory.Data.MyObject.HasStatusAny(new uint[] { 160, 1209 });
         }
 
