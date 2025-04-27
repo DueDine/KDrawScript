@@ -14,12 +14,13 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.7", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.8", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -86,7 +87,7 @@ namespace KDrawScript.Dev
         [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
 
-        [UserSetting(note: "在第二次 吸引 / 击退 时自动使用亲疏 / 沉稳 以及 打断暗之泛滥")]
+        [UserSetting(note: "在释放存储 吸引 / 击退 时自动使用亲疏 / 沉稳 以及 打断暗之泛滥")]
         public bool UseAction { get; set; } = false;
 
         [UserSetting(note: "特殊提醒 不知道是什么绝对不要开")]
@@ -455,10 +456,39 @@ namespace KDrawScript.Dev
             if (DelayWhat == "Endeath")
             {
                 SendText("准备吸引", accessory);
+
+                Task.Delay(500).ContinueWith(t =>
+                {
+                    if (HaveMitigation(accessory)) return;
+                    var dp = accessory.Data.GetDefaultDrawProperties();
+                    dp.Name = "Endeath - Attract";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Owner = accessory.Data.Me;
+                    dp.TargetPosition = new(100, 0, 76.28f);
+                    dp.Scale = new(1.5f, 15);
+                    dp.DestoryAt = 3000;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                });
             }
             else if (DelayWhat == "Enaero")
             {
                 SendText("准备击退", accessory);
+
+                Task.Delay(500).ContinueWith(t =>
+                {
+                    if (HaveMitigation(accessory)) return;
+                    var dp = accessory.Data.GetDefaultDrawProperties();
+                    dp.Name = "Enaero - Knockback";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Position = new(100, 0, 76.28f);
+                    dp.TargetObject = accessory.Data.Me;
+                    dp.Scale = new(1.5f, 21);
+                    dp.DestoryAt = 2000;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                }
+                );
             }
             if (UseAction) AutoSCAL(accessory);
             DelayWhat = string.Empty;
@@ -496,6 +526,16 @@ namespace KDrawScript.Dev
                     dp.DestoryAt = 2000;
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+
+                    dp.Name = "Enaero - Knockback";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Position = new(100, 0, 76.28f);
+                    dp.TargetObject = accessory.Data.Me;
+                    dp.Scale = new(1.5f, 21);
+                    dp.DestoryAt = 2500;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+
                     break;
                 case "40526":
                     dp.Scale = new(8);
@@ -504,20 +544,6 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
                     break;
             }
-
-            Task.Delay(200).ContinueWith(t =>
-                {
-                    if (HaveMitigation(accessory)) return;
-                    dp.Name = "Enaero - Knockback";
-                    dp.Color = accessory.Data.DefaultSafeColor;
-                    dp.Position = new(100, 0, 76.28f);
-                    dp.TargetObject = accessory.Data.Me;
-                    dp.Scale = new(1.5f, 21);
-                    dp.DestoryAt = 2000;
-
-                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
-                }
-            );
         }
 
         [ScriptMethod(name: "Endeath AOE", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[01]|4051[78])$"])]
@@ -552,6 +578,16 @@ namespace KDrawScript.Dev
                     dp.DestoryAt = 4000;
 
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+
+                    dp.Name = "Endeath - Attract";
+                    dp.Color = accessory.Data.DefaultSafeColor;
+                    dp.Owner = accessory.Data.Me;
+                    dp.TargetPosition = new(100, 0, 76.28f);
+                    dp.Scale = new(1.5f, 15);
+                    dp.DestoryAt = 3000;
+
+                    accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+
                     break;
                 case "40518":
                     dp.Scale = new(40);
@@ -563,19 +599,6 @@ namespace KDrawScript.Dev
                     accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
                     return;
             }
-
-            Task.Delay(200).ContinueWith(t =>
-            {
-                if (HaveMitigation(accessory)) return;
-                dp.Name = "Endeath - Attract";
-                dp.Color = accessory.Data.DefaultSafeColor;
-                dp.Owner = accessory.Data.Me;
-                dp.TargetPosition = new(100, 0, 76.28f);
-                dp.Scale = new(1.5f, 15);
-                dp.DestoryAt = 2000;
-
-                accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
-            });
         }
 
         [ScriptMethod(name: "Break IV 背对提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(4052[79])$"])]
@@ -1319,7 +1342,7 @@ namespace KDrawScript.Dev
                         if (Flag == 128) TileInstance.StartDraw(Index, accessory, true);
                     }
                 }
-                if (DrawTowers)
+                if (EnableGuidance)
                 {
                     if (accessory.Data.MyObject.HasStatus(4178))
                     {
