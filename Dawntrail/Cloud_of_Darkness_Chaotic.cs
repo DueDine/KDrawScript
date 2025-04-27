@@ -20,23 +20,22 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.9", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.2.0", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
         """
-        当前仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
+        当前不仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
+        内场组机制开发中。
         若发生问题请携ARR反馈。
         """;
 
         private const string UpdateInfo =
         """
-        1. 修复了P3小云正侧炮。
-        2. 内场组添加放种子前预站位。
-        3. 内场组添加回旋式波动炮预占位与返回位。
-        4. 若处于内场组，回旋式波动炮范围绘图直接出现。
-        5. 加入了内场地板的持续时间绘制。
-        6. 加入了踩塔指路。
+        1. 加入了根据buff不可选中无法造成伤害的Boss的功能（外场坦克除外，保留挑衅大云救场的可能性）。
+        2. 加入了内场种子弹指路。
+        3. 加入了内场荆棘丛生拉线方向指引，及坦克待命位置。
+        4. 内场组添加回旋式波动炮预占位与返回位指示。
         """;
 
         private const bool Debugging = false;
@@ -1218,15 +1217,14 @@ namespace KDrawScript.Dev
         {
             // 基准点，选取为方位0（右上）优先级低（近）点。
             Vector3 seedPlacePos = new Vector3(113.5f, 0f, 95.5f);
-            Vector3 center = Center;
             
             // 在另一侧则中心翻转
             if (dir >= 2)
-                seedPlacePos = new Vector3(2 * center.X - seedPlacePos.X, 0f, 2 * center.Z - seedPlacePos.Z);
+                seedPlacePos = FoldPointHorizon(FoldPointVertical(seedPlacePos, Center.Z), Center.X);
             
             // 走远路的情况
             if ((dir + priorIdx) % 2 == 1)
-                seedPlacePos = new Vector3(seedPlacePos.X, 0f, 2 * center.Z - seedPlacePos.Z);
+                seedPlacePos = FoldPointVertical(seedPlacePos, Center.Z);
 
             return seedPlacePos;
         }
@@ -1241,6 +1239,98 @@ namespace KDrawScript.Dev
             sa.Log.Debug($"荆棘丛生优先级类初始化");
         }
 
+        [ScriptMethod(name: "Evil Seed Place 内场种子拉线路径", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:000C"])]
+        public void EvilSeedRouteInnerGuidance(Event ev, ScriptAccessory sa)
+        {
+            lock (this)
+            {
+                // --- 执行条件
+                if (!IsOnInnerPlatform(sa, sa.Data.Me)) return;     // 如果玩家不在内场忽略
+                _pd.ActionCount++;                                  // 增加一次荆棘丛生目标计数
+                if (!IsOnInnerPlatform(sa, ev.TargetId)) return;    // 如果被种子点名人不在内场，忽略
+                
+                // 获得玩家所在四角方位
+                var myChara = sa.Data.MyObject;
+                if (myChara == null) return;
+                var myDir = Position2Dirs(myChara.Position, Center, 4, false);
+                
+                // 获得目标所在四角方位
+                IPlayerCharacter? tchara = (IPlayerCharacter?)sa.Data.Objects.SearchById(ev.TargetId);
+                if (tchara == null) return;
+                var targetDir = Position2Dirs(tchara.Position, Center, 4, false);
+                
+                // 如果玩家与目标所在方位不同，忽略
+                if (targetDir != myDir) return;
+            
+                // --- 添加优先级
+                var tJobPrior = tchara.IsTank() ? 0 :
+                    tchara.IsHealer() ? 2 :
+                    tchara.IsDps() ? 1 :
+                    -1;                     // 获得目标职能
+                var tidx = ev.TargetId == sa.Data.Me ? 100 : _pd.ActionCount;    // 玩家与其他玩家Key作出区分
+                _pd.Priorities.Add(tidx, tJobPrior);    // 添加对应优先级
+                
+                // 在收集全12颗荆棘前不执行后续步骤
+                if (_pd.ActionCount < 12) return;
+                sa.Log.Debug($"玩家所在方位{myDir}");
+                
+                // --- 优先级提取与判断
+                var seedTargetNum = _pd.Priorities.Count;
+                if (seedTargetNum != 2 && seedTargetNum != 0)
+                {
+                    sa.Log.Debug($"区域内荆棘目标不为0或2，忽略。");
+                    return;
+                }
+                
+                var posStart = GetBlockField(2, 7);
+                var posEnd = GetBlockField(2, 2);
+                    
+                // 需要上下翻转：myDir == 1 or 2 ==> (myDir + 1 + 4) % 4 >= 2
+                if ((myDir + 1 + 4) % 4 >= 2)
+                {
+                    sa.Log.Debug($"上下翻转");
+                    posStart = FoldPointVertical(posStart, Center.Z);
+                    posEnd = FoldPointVertical(posEnd, Center.Z);
+                }
+                
+                // 需要左右调换：
+                // 1. myDir == 0, seedTargetNum = 0
+                // 2. myDir == 1, seedTargetNum = 0
+                // 3. myDir == 2, seedTargetNum = 2
+                // 4. myDir == 3, seedTargetNum = 2
+                if (myDir + seedTargetNum > 3)
+                {
+                    sa.Log.Debug($"左右翻转");
+                    posStart = FoldPointHorizon(posStart, Center.X);
+                    posEnd = FoldPointHorizon(posEnd, Center.X);
+                }
+
+                var dpRoute = DrawGuidance(sa, posStart, posEnd, 0, 10000, $"荆棘拉线路径", scale: 2f);
+                sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dpRoute);
+                
+                // 玩家Key是否在内，同时判断玩家是否为T
+                if (!_pd.Priorities.ContainsKey(100))
+                {
+                    sa.Log.Debug($"玩家未被荆棘点名。");
+                    
+                    if (!myChara.IsTank()) return;
+                    var tpost = myDir switch
+                    {
+                        0 => GetBlockField(3, 7),
+                        1 => GetBlockField(6, 7),
+                        2 => GetBlockField(6, 2),
+                        3 => GetBlockField(3, 2),
+                        _ => throw new ArgumentException("玩家方位未知")
+                    };
+                    
+                    var dpt = DrawGuidance(sa, tpost, 0, 10000, $"T躲荆棘位置");
+                    sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dpt);
+                    var dpb = DrawBlockField(sa, tpost, sa.Data.DefaultSafeColor, 0, 7000);
+                }
+                
+            }
+        }
+        
         [ScriptMethod(name: "Evil Seed Tether 拉线站位", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"])]
         public void EvilSeedTether(Event @event, ScriptAccessory accessory)
         {
@@ -1625,6 +1715,52 @@ namespace KDrawScript.Dev
         {
             Vector3 centerTriple = new(100, 0, 100);
             return centerTriple + new Vector3(6 * (col - 4) - 3, 0, 6 * (row - 4) - 3);
+        }
+        
+        /// <summary>
+        /// 画出P3场地第row排第col列的方格
+        /// </summary>
+        /// <param name="sa"></param>
+        /// <param name="blockCenter"></param>
+        /// <param name="color"></param>
+        /// <param name="delay"></param>
+        /// <param name="destroy"></param>
+        /// <param name="draw">是否直接画出</param>
+        /// <returns></returns>
+        private DrawPropertiesEdit DrawBlockField(ScriptAccessory sa, Vector3 blockCenter, Vector4 color, int delay, int destroy, bool draw = true)
+        {
+            // 画方格
+            var dp = sa.Data.GetDefaultDrawProperties();
+            dp.Name = $"方格{blockCenter}";
+            dp.Scale = new Vector2(6, 6);
+            dp.Position = blockCenter;
+            dp.Delay = delay;
+            dp.DestoryAt = destroy;
+            dp.Color = color;
+            if (draw) sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp);
+            return dp;
+        }
+        
+        /// <summary>
+        /// 将输入点左右折叠
+        /// </summary>
+        /// <param name="point">待折叠点</param>
+        /// <param name="centerX">中心折线坐标点</param>
+        /// <returns></returns>
+        public static Vector3 FoldPointHorizon(Vector3 point, float centerX)
+        {
+            return point with { X = 2 * centerX - point.X };
+        }
+
+        /// <summary>
+        /// 将输入点上下折叠
+        /// </summary>
+        /// <param name="point">待折叠点</param>
+        /// <param name="centerZ">中心折线坐标点</param>
+        /// <returns></returns>
+        public static Vector3 FoldPointVertical(Vector3 point, float centerZ)
+        {
+            return point with { Z = 2 * centerZ - point.Z };
         }
 
         /// <summary>
