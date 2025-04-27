@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.8", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.9", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
@@ -1351,7 +1351,7 @@ namespace KDrawScript.Dev
                         if (Flag == 8) TowerInstance.CancelDraw(Index, accessory);
                         if (Flag == 2)
                         {
-                            if (TowerInstance.IsMyTower(accessory, Index, Party, HaveLoomingChaos))
+                            if (TowerInstance.IsMyTower(accessory, Index, Party, HaveLoomingChaos, DrawTowers))
                                 TowerInstance.StartDraw(Index, accessory);
                         }
                     }
@@ -1906,6 +1906,7 @@ namespace KDrawScript.Dev
             private readonly List<int> RightMTGroup = [0x43, 0x46];
             private readonly List<int> LeftSTGroup = [0x3F, 0x40];
             private readonly List<int> RightSTGroup = [0x44, 0x45];
+            private readonly Vector3 Center = new(100, 0, 100);
 
             private Vector3 TowerCenter(int index)
             {
@@ -1925,21 +1926,24 @@ namespace KDrawScript.Dev
                 return new Vector3(100 + offset.X, 0, 100 + offset.Z);
             }
 
-            public bool IsMyTower(ScriptAccessory accessory, int index, PartyEnum party, bool afterSwap)
+            private bool LeftOrRight(ScriptAccessory accessory) => (accessory.Data.MyObject.Position.X - Center.X) > 0;
+
+            public bool IsMyTower(ScriptAccessory accessory, int index, PartyEnum party, bool afterSwap, bool experiment)
             {
-                if (party == PartyEnum.B || party == PartyEnum.None) return false;
+                if (party == PartyEnum.None) return false;
                 if ((party == PartyEnum.A && !afterSwap) ||
                     (party == PartyEnum.C && afterSwap))
                 {
                     if (!LeftSideTower.Contains(index)) return false;
                     var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
-                    if (idx < 5 && afterSwap) return false;
+                    if (idx < 5 && afterSwap && !experiment) return false;
                     if (!afterSwap)
                     {
                         if (idx % 2 == 0 && idx != 2) return LeftMTGroup.Contains(index);
                         if (idx % 2 == 1 && idx != 3) return LeftSTGroup.Contains(index);
                     }
-                    return LeftSTGroup.Contains(index);
+                    if (experiment && index < 5) return LeftMTGroup.Contains(index);
+                    if (index >= 5) return LeftSTGroup.Contains(index);
                 }
 
                 if ((party == PartyEnum.A && afterSwap) ||
@@ -1947,13 +1951,21 @@ namespace KDrawScript.Dev
                 {
                     if (!RightSideTower.Contains(index)) return false;
                     var idx = accessory.Data.PartyList.IndexOf(accessory.Data.Me);
-                    if (idx < 5 && afterSwap) return false;
+                    if (idx < 5 && afterSwap && !experiment) return false;
                     if (!afterSwap)
                     {
                         if (idx % 2 == 0 && idx != 2) return RightMTGroup.Contains(index);
                         if (idx % 2 == 1 && idx != 3) return RightSTGroup.Contains(index);
                     }
-                    return RightSTGroup.Contains(index);
+                    if (experiment && index < 5) return RightMTGroup.Contains(index);
+                    if (index >= 5) return RightSTGroup.Contains(index);
+                }
+
+                if (party == PartyEnum.B && afterSwap && experiment)
+                {
+                    if (!accessory.Data.MyObject.HasStatus(4178)) return false;
+                    if (LeftOrRight(accessory)) return RightMTGroup.Contains(index);
+                    return LeftMTGroup.Contains(index);
                 }
                 return false;
             }
