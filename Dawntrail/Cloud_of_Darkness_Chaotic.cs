@@ -689,6 +689,10 @@ namespace KDrawScript.Dev
             }
         }
         
+        [ScriptMethod(name: "初始化台阶", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40449"], userControl: false)]
+        public void RecordOwner(Event @event, ScriptAccessory accessory) => TileInstance.InitOwner(accessory);
+        
+        
         [ScriptMethod(name: "开场初始就位位置", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
         userControl: true)]
         public void P3InitField(Event ev, ScriptAccessory sa)
