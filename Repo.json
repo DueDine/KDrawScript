@@ -32,12 +32,14 @@
     {
         "Name": "CoD (Chaotic) 暗黑之云诛灭战",
         "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
-        "Version": "0.0.1.9",
+        "Version": "0.0.2.0",
         "Author": "Due",
         "TerritoryIds": [
             1241
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs",
+        "Note": "当前不仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。\n内场组机制开发中。\n若发生问题请携ARR反馈。",
+        "UpdateInfo": "1. 加入了根据buff不可选中无法造成伤害的Boss的功能（外场坦克除外，保留挑衅大云救场的可能性）。\n2. 加入了内场种子弹指路。\n3. 加入了内场荆棘丛生拉线方向指引，及坦克待命位置。\n4. 内场组添加回旋式波动炮预占位与返回位指示。"
     },
     {
         "Name": "Jeuno The First Walk 朱诺：第一巡行",

@@ -20,23 +20,22 @@ using System.Threading.Tasks;
 
 namespace KDrawScript.Dev
 {
-    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.1.9", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
+    [ScriptType(name: "CoD (Chaotic) 暗黑之云诛灭战", territorys: [1241], guid: "436effd2-a350-4c67-b341-b4fe5a4ac233", version: "0.0.2.0", author: "Due", note: NoteStr, updateInfo: UpdateInfo)]
     public class Cloud_of_Darkness_Chaotic
     {
         private const string NoteStr =
         """
-        当前仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
+        当前不仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。
+        内场组机制开发中。
         若发生问题请携ARR反馈。
         """;
 
         private const string UpdateInfo =
         """
-        1. 修复了P3小云正侧炮。
-        2. 内场组添加放种子前预站位。
-        3. 内场组添加回旋式波动炮预占位与返回位。
-        4. 若处于内场组，回旋式波动炮范围绘图直接出现。
-        5. 加入了内场地板的持续时间绘制。
-        6. 加入了踩塔指路。
+        1. 加入了根据buff不可选中无法造成伤害的Boss的功能（外场坦克除外，保留挑衅大云救场的可能性）。
+        2. 加入了内场种子弹指路。
+        3. 加入了内场荆棘丛生拉线方向指引，及坦克待命位置。
+        4. 内场组添加回旋式波动炮预占位与返回位指示。
         """;
 
         private const bool Debugging = false;
@@ -58,10 +57,12 @@ namespace KDrawScript.Dev
             .Range(0, 20)
             .Select(_ => new ManualResetEvent(false))
             .ToList();
+        private static PriorityDict _pd = new PriorityDict();
 
         private List<(ulong, string)> Embrace = [];
         private string DelayWhat = string.Empty;
         private bool HaveLoomingChaos = false;
+        private bool HasShownMemberIdx = false;
         private readonly List<Vector3> FlarePoint = [new(72, 0, 76), new(100, 0, 103), new(126, 0, 76)];
         private readonly List<Vector3> SeedPoint = [new(0, 0, 0), new(70, 0, 92), new(70, 0, 107), new(130, 0, 108), new(130, 0, 92)]; // Only A, C Party Each have two points
         private readonly Object SeedLock = new();
@@ -86,6 +87,9 @@ namespace KDrawScript.Dev
 
         [UserSetting(note: "请选择你的队伍。")]
         public PartyEnum Party { get; set; } = PartyEnum.None;
+        
+        [UserSetting(note: "转阶段时身份设置提醒")]
+        public bool ShowMemberIdxHint { get; set; } = true;
 
         [UserSetting(note: "在释放存储 吸引 / 击退 时自动使用亲疏 / 沉稳 以及 打断暗之泛滥")]
         public bool UseAction { get; set; } = false;
@@ -117,10 +121,13 @@ namespace KDrawScript.Dev
                 .Range(0, 20)
                 .Select(_ => new ManualResetEvent(false))
                 .ToList();
-
+            _pd = new PriorityDict();
+            _pd.Init(accessory, "Init", 0);
+            
             Embrace.Clear();
             DelayWhat = string.Empty;
             HaveLoomingChaos = false;
+            HasShownMemberIdx = false;
             SeedTarget.Clear();
             RazingRecord = 0;
             EverDrawPhaser = false;
@@ -210,6 +217,29 @@ namespace KDrawScript.Dev
                 SetTargetable(sa, shadowChara, !shadowChara.IsTargetable);
             sa.Log.Debug($"已翻转小云可选中状态。");
         }
+        
+        [ScriptMethod(name: "测试 种子站位枚举", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void SeedPositionEnumTest(Event ev, ScriptAccessory sa)
+        {
+            for (int dir = 0; dir < 4; dir++)
+            {
+                for (int priorIdx = 0; priorIdx < 2; priorIdx++)
+                {
+                    var pos = GetSeedField(dir, priorIdx);
+                    sa.Log.Debug($"方位{dir}, 优先级序列{priorIdx}({(priorIdx == 0 ? "近": "远")}), 种子放在{pos}");
+                }
+            }
+        }
+        
+        [ScriptMethod(name: "测试 输出PriorityDict", eventType: EventTypeEnum.NpcYell, eventCondition: ["HelloayaWorld"],
+            userControl: Debugging)]
+        public void PrintPriorityDict(Event ev, ScriptAccessory sa)
+        {
+            var str = _pd.ShowPriorities(false);
+            sa.Log.Debug(str);
+        }
+        
 
         #endregion TestRegion
 
@@ -228,11 +258,15 @@ namespace KDrawScript.Dev
             _codPhase = CodPhase.Diamond;
             sa.Log.Debug($"当前阶段为：{_codPhase}");
             var partyMemberIdxNew = GetMemberIdx(sa);
-            if (_partyMemberIdx != partyMemberIdxNew)
+            if (_partyMemberIdx != partyMemberIdxNew || !HasShownMemberIdx)
             {
                 _partyMemberIdx = partyMemberIdxNew;
-                sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
-                    5000, false);
+                HasShownMemberIdx = true;
+                if (ShowMemberIdxHint)
+                    sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
+                        5000, false);
+                else
+                    SendText("AOE", sa);
             }
         }
 
@@ -273,7 +307,6 @@ namespace KDrawScript.Dev
         [ScriptMethod(name: "AOE 提醒", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40510|40456)$"])]
         public void DelugeofDarkness(Event @event, ScriptAccessory accessory)
         {
-            // Usami: 我把 [40509 暗之泛滥] AOE提醒的部分改成了玩家身份提醒，按理说AOE应该不会忘吧！
             SendText("AOE", accessory);
         }
 
@@ -644,18 +677,23 @@ namespace KDrawScript.Dev
             _codPhase = CodPhase.Tilt;
             sa.Log.Debug($"当前阶段为：{_codPhase}");
             var partyMemberIdxNew = GetMemberIdx(sa);
-            if (_partyMemberIdx != partyMemberIdxNew)
+            if (_partyMemberIdx != partyMemberIdxNew || !HasShownMemberIdx)
             {
                 _partyMemberIdx = partyMemberIdxNew;
-                sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
+                HasShownMemberIdx = true;
+                if (ShowMemberIdxHint)
+                    sa.Method.TextInfo($"你的身份为，【{_alliance[partyMemberIdxNew / 10]}队{_role[partyMemberIdxNew % 10]}】，若有误请及时于【用户设置】调整。",
                     5000, false);
+                else
+                    SendText($"AOE", sa);
             }
         }
-
-        [ScriptMethod(name: "阶段转换 - 三重", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40449"], userControl: false)]
+        
+        [ScriptMethod(name: "初始化台阶", eventType: EventTypeEnum.ActionEffect, eventCondition: ["ActionId:40449"], userControl: false)]
         public void RecordOwner(Event @event, ScriptAccessory accessory) => TileInstance.InitOwner(accessory);
-
-        [ScriptMethod(name: "初始位置", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
+        
+        
+        [ScriptMethod(name: "开场初始就位位置", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40449"],
         userControl: true)]
         public void P3InitField(Event ev, ScriptAccessory sa)
         {
@@ -730,45 +768,49 @@ namespace KDrawScript.Dev
             }
             catch { return -1; }
         }
+        
+        [ScriptMethod(name: "等待小云出现并可选中", eventType: EventTypeEnum.PlayActionTimeline, eventCondition: ["SourceDataId:17951", "Id:7747"],
+            userControl: false)]
+        public async void P3ShadowTimeline(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            sa.Log.Debug($"检测到小云出现 PlayActionTimeline");
+            await Task.Delay(2000);
+            _events[0].Set();
+        }
+        
+        [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 1（请与下项一同开启）", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:regex:^(417[78])$"],
+            userControl: true)]
+        public void P3DistargetableBoss(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            if (ev.TargetId != sa.Data.Me) return;
+            // 4177 inner platform
+            // 4178 side platform
+            sa.Log.Debug($"获得状态：{ev.StatusId}");
+            _events[0].WaitOne();
 
-        // 该功能未进行充分测试，先屏蔽。
-
-        // [ScriptMethod(name: "等待小云出现并可选中", eventType: EventTypeEnum.PlayActionTimeline, eventCondition: ["SourceDataId:17951", "Id:7747"],
-        //     userControl: false)]
-        // public async void P3ShadowTimeline(Event ev, ScriptAccessory sa)
-        // {
-        //     if (_codPhase != CodPhase.Tilt) return;
-        //     sa.Log.Debug($"检测到小云出现 PlayActionTimeline");
-        //     await Task.Delay(2000);
-        //     _events[0].Set();
-        // }
-
-        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 1（请与下项一同开启）", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:regex:^(417[78])$"],
-        //     userControl: true)]
-        // public void P3DistargetableBoss(Event ev, ScriptAccessory sa)
-        // {
-        //     if (_codPhase != CodPhase.Tilt) return;
-        //     if (ev.TargetId != sa.Data.Me) return;
-        //     // 4177 inner platform
-        //     // 4178 side platform
-        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
-        //     _events[0].WaitOne();
-        //     SetTargetableBoss(sa, ev.StatusId != 4177u, false);
-        // }
-
-        // [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 2", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:regex:^(417[78])$"],
-        //     userControl: true)]
-        // public void P3TargetableBoss(Event ev, ScriptAccessory sa)
-        // {
-        //     if (_codPhase != CodPhase.Tilt) return;
-        //     if (ev.TargetId != sa.Data.Me) return;
-        //     // 4177 inner platform
-        //     // 4178 side platform
-        //     sa.Log.Debug($"获得状态：{ev.StatusId}");
-        //     _events[0].WaitOne();
-        //     SetTargetableBoss(sa, ev.StatusId != 4177u, true);
-        // }
-
+            var myObj = sa.Data.MyObject;
+            if (myObj == null) return;
+            // 坦克若去场边，不会使大云不可选中，保留场外坦克挑衅大云救场的操作。
+            if (myObj.IsTank() && ev.StatusId == 4178u) return;
+            
+            SetTargetableBoss(sa, ev.StatusId != 4177u, false);
+        }
+        
+        [ScriptMethod(name: "根据内外场Buff设置可选中目标 - 2", eventType: EventTypeEnum.StatusRemove, eventCondition: ["StatusID:regex:^(417[78])$"],
+            userControl: true)]
+        public void P3TargetableBoss(Event ev, ScriptAccessory sa)
+        {
+            if (_codPhase != CodPhase.Tilt) return;
+            if (ev.TargetId != sa.Data.Me) return;
+            // 4177 inner platform
+            // 4178 side platform
+            sa.Log.Debug($"获得状态：{ev.StatusId}");
+            _events[0].WaitOne();
+            SetTargetableBoss(sa, ev.StatusId != 4177u, true);
+        }
+        
         private void SetTargetableBoss(ScriptAccessory sa, bool isCloud, bool isTargetable)
         {
             if (isCloud)
@@ -791,7 +833,22 @@ namespace KDrawScript.Dev
                     SetTargetable(sa, shadowChara, isTargetable);
             }
         }
-
+        
+        [ScriptMethod(name: "Dark Dominion 深暗领域月环", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40456"])]
+        public void DarkDominionDonut(Event ev, ScriptAccessory sa)
+        {
+            var dp = sa.Data.GetDefaultDrawProperties();
+            dp.Name = "深暗领域月环";
+            dp.Scale = new Vector2(40);
+            dp.InnerScale = new Vector2(34);
+            dp.Radian = float.Pi * 2;
+            dp.Position = Center;
+            dp.Color = sa.Data.DefaultDangerColor;
+            dp.Delay = 0;
+            dp.DestoryAt = 5000;
+            sa.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Donut, dp);
+        }
+    
         [ScriptMethod(name: "Ghastly Gloom 大云月环十字绘制", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:regex:^(40458|40460)$"])]
         public void GhastlyGloom(Event @event, ScriptAccessory accessory)
         {
@@ -1087,7 +1144,197 @@ namespace KDrawScript.Dev
                 accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
             }
         }
+        
+        [ScriptMethod(name: "Evil Seed PriorityDict Init 种子弹优先级类初始化",
+            eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40490"],
+            suppress: 10000, userControl: Debugging)]
+        public void EvilSeedPriorityDictInit(Event ev, ScriptAccessory sa)
+        {
+            // 初始化种子弹优先级
+            _pd.Init(sa, "种子弹", 0);
+            sa.Log.Debug($"种子弹优先级类初始化");
+        }
+        
+        [ScriptMethod(name: "Evil Seed Place 内场放种子站位", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:0227"])]
+        public void EvilSeedPlaceInnerGuidance(Event ev, ScriptAccessory sa)
+        {
+            lock (this)
+            {
+                // --- 执行条件
+                if (!IsOnInnerPlatform(sa, sa.Data.Me)) return;     // 如果玩家不在内场忽略
+                _pd.ActionCount++;                                  // 增加一次种子弹目标计数
+                if (!IsOnInnerPlatform(sa, ev.TargetId)) return;    // 如果被种子点名人不在内场，忽略
+                
+                // 获得玩家所在四角方位
+                var myChara = sa.Data.MyObject;
+                if (myChara == null) return;
+                var myDir = Position2Dirs(myChara.Position, Center, 4, false);
+                
+                // 获得目标所在四角方位
+                IPlayerCharacter? tchara = (IPlayerCharacter?)sa.Data.Objects.SearchById(ev.TargetId);
+                if (tchara == null) return;
+                var targetDir = Position2Dirs(tchara.Position, Center, 4, false);
+                
+                // 如果玩家与目标所在方位不同，忽略
+                if (targetDir != myDir) return;
+            
+                // --- 添加优先级
+                var tJobPrior = tchara.IsTank() ? 0 :
+                    tchara.IsHealer() ? 2 :
+                    tchara.IsDps() ? 1 :
+                    -1;                     // 获得目标职能
+                var tidx = ev.TargetId == sa.Data.Me ? 100 : _pd.ActionCount;    // 玩家与其他玩家Key作出区分
+                _pd.Priorities.Add(tidx, tJobPrior);    // 添加对应优先级
+                
+                // 在收集全8颗种子弹前不执行后续步骤
+                if (_pd.ActionCount < 8) return;
+                
+                // --- 优先级提取与判断
+                var seedTargetNum = _pd.Priorities.Count;
+                if (seedTargetNum > 2)
+                {
+                    sa.Log.Debug($"区域内种子弹目标大于2，忽略。");
+                    return;
+                }
+                
+                // 玩家Key是否在内
+                if (!_pd.Priorities.ContainsKey(100))
+                {
+                    sa.Log.Debug($"玩家未被种子点名，忽略。");
+                    return;
+                }
+                
+                // 提取玩家优先级升序排序
+                var myPriorIdx = _pd.FindPriorityIndexOfKey(100);
+                
+                // --- 指路
+                // 有且只有两种可能：0或1。
+                // 0，则优先级数值小，靠近板块放种子；1，则优先级数值大，远离板块放种子。
+                var tpos = GetSeedField(myDir, myPriorIdx);
+                var dp = DrawGuidance(sa, tpos, 0, 5000, $"放种子位置{myDir}_{myPriorIdx}");
+                sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+                sa.Log.Debug($"玩家被种子点名，位于方位{myDir}，优先级序列{myPriorIdx}({(myPriorIdx == 0 ? "近": "远")})");
+            }
+        }
+        
+        private Vector3 GetSeedField(int dir, int priorIdx)
+        {
+            // 基准点，选取为方位0（右上）优先级低（近）点。
+            Vector3 seedPlacePos = new Vector3(113.5f, 0f, 95.5f);
+            
+            // 在另一侧则中心翻转
+            if (dir >= 2)
+                seedPlacePos = FoldPointHorizon(FoldPointVertical(seedPlacePos, Center.Z), Center.X);
+            
+            // 走远路的情况
+            if ((dir + priorIdx) % 2 == 1)
+                seedPlacePos = FoldPointVertical(seedPlacePos, Center.Z);
 
+            return seedPlacePos;
+        }
+
+        [ScriptMethod(name: "Thorny Vine PriorityDict Init 荆棘丛生优先级类初始化",
+            eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"],
+            suppress: 10000, userControl: Debugging)]
+        public void ThornyVinePriorityDictInit(Event ev, ScriptAccessory sa)
+        {
+            // 初始化荆棘丛生优先级
+            _pd.Init(sa, "荆棘丛生", 0);
+            sa.Log.Debug($"荆棘丛生优先级类初始化");
+        }
+
+        [ScriptMethod(name: "Evil Seed Place 内场种子拉线路径", eventType: EventTypeEnum.TargetIcon, eventCondition: ["Id:000C"])]
+        public void EvilSeedRouteInnerGuidance(Event ev, ScriptAccessory sa)
+        {
+            lock (this)
+            {
+                // --- 执行条件
+                if (!IsOnInnerPlatform(sa, sa.Data.Me)) return;     // 如果玩家不在内场忽略
+                _pd.ActionCount++;                                  // 增加一次荆棘丛生目标计数
+                if (!IsOnInnerPlatform(sa, ev.TargetId)) return;    // 如果被种子点名人不在内场，忽略
+                
+                // 获得玩家所在四角方位
+                var myChara = sa.Data.MyObject;
+                if (myChara == null) return;
+                var myDir = Position2Dirs(myChara.Position, Center, 4, false);
+                
+                // 获得目标所在四角方位
+                IPlayerCharacter? tchara = (IPlayerCharacter?)sa.Data.Objects.SearchById(ev.TargetId);
+                if (tchara == null) return;
+                var targetDir = Position2Dirs(tchara.Position, Center, 4, false);
+                
+                // 如果玩家与目标所在方位不同，忽略
+                if (targetDir != myDir) return;
+            
+                // --- 添加优先级
+                var tJobPrior = tchara.IsTank() ? 0 :
+                    tchara.IsHealer() ? 2 :
+                    tchara.IsDps() ? 1 :
+                    -1;                     // 获得目标职能
+                var tidx = ev.TargetId == sa.Data.Me ? 100 : _pd.ActionCount;    // 玩家与其他玩家Key作出区分
+                _pd.Priorities.Add(tidx, tJobPrior);    // 添加对应优先级
+                
+                // 在收集全12颗荆棘前不执行后续步骤
+                if (_pd.ActionCount < 12) return;
+                sa.Log.Debug($"玩家所在方位{myDir}");
+                
+                // --- 优先级提取与判断
+                var seedTargetNum = _pd.Priorities.Count;
+                if (seedTargetNum != 2 && seedTargetNum != 0)
+                {
+                    sa.Log.Debug($"区域内荆棘目标不为0或2，忽略。");
+                    return;
+                }
+                
+                var posStart = GetBlockField(2, 7);
+                var posEnd = GetBlockField(2, 2);
+                    
+                // 需要上下翻转：myDir == 1 or 2 ==> (myDir + 1 + 4) % 4 >= 2
+                if ((myDir + 1 + 4) % 4 >= 2)
+                {
+                    sa.Log.Debug($"上下翻转");
+                    posStart = FoldPointVertical(posStart, Center.Z);
+                    posEnd = FoldPointVertical(posEnd, Center.Z);
+                }
+                
+                // 需要左右调换：
+                // 1. myDir == 0, seedTargetNum = 0
+                // 2. myDir == 1, seedTargetNum = 0
+                // 3. myDir == 2, seedTargetNum = 2
+                // 4. myDir == 3, seedTargetNum = 2
+                if (myDir + seedTargetNum > 3)
+                {
+                    sa.Log.Debug($"左右翻转");
+                    posStart = FoldPointHorizon(posStart, Center.X);
+                    posEnd = FoldPointHorizon(posEnd, Center.X);
+                }
+
+                var dpRoute = DrawGuidance(sa, posStart, posEnd, 0, 10000, $"荆棘拉线路径", scale: 2f);
+                sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dpRoute);
+                
+                // 玩家Key是否在内，同时判断玩家是否为T
+                if (!_pd.Priorities.ContainsKey(100))
+                {
+                    sa.Log.Debug($"玩家未被荆棘点名。");
+                    
+                    if (!myChara.IsTank()) return;
+                    var tpost = myDir switch
+                    {
+                        0 => GetBlockField(3, 7),
+                        1 => GetBlockField(6, 7),
+                        2 => GetBlockField(6, 2),
+                        3 => GetBlockField(3, 2),
+                        _ => throw new ArgumentException("玩家方位未知")
+                    };
+                    
+                    var dpt = DrawGuidance(sa, tpost, 0, 10000, $"T躲荆棘位置");
+                    sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dpt);
+                    var dpb = DrawBlockField(sa, tpost, sa.Data.DefaultSafeColor, 0, 7000);
+                }
+                
+            }
+        }
+        
         [ScriptMethod(name: "Evil Seed Tether 拉线站位", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:40492"])]
         public void EvilSeedTether(Event @event, ScriptAccessory accessory)
         {
@@ -1473,6 +1720,52 @@ namespace KDrawScript.Dev
             Vector3 centerTriple = new(100, 0, 100);
             return centerTriple + new Vector3(6 * (col - 4) - 3, 0, 6 * (row - 4) - 3);
         }
+        
+        /// <summary>
+        /// 画出P3场地第row排第col列的方格
+        /// </summary>
+        /// <param name="sa"></param>
+        /// <param name="blockCenter"></param>
+        /// <param name="color"></param>
+        /// <param name="delay"></param>
+        /// <param name="destroy"></param>
+        /// <param name="draw">是否直接画出</param>
+        /// <returns></returns>
+        private DrawPropertiesEdit DrawBlockField(ScriptAccessory sa, Vector3 blockCenter, Vector4 color, int delay, int destroy, bool draw = true)
+        {
+            // 画方格
+            var dp = sa.Data.GetDefaultDrawProperties();
+            dp.Name = $"方格{blockCenter}";
+            dp.Scale = new Vector2(6, 6);
+            dp.Position = blockCenter;
+            dp.Delay = delay;
+            dp.DestoryAt = destroy;
+            dp.Color = color;
+            if (draw) sa.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Straight, dp);
+            return dp;
+        }
+        
+        /// <summary>
+        /// 将输入点左右折叠
+        /// </summary>
+        /// <param name="point">待折叠点</param>
+        /// <param name="centerX">中心折线坐标点</param>
+        /// <returns></returns>
+        public static Vector3 FoldPointHorizon(Vector3 point, float centerX)
+        {
+            return point with { X = 2 * centerX - point.X };
+        }
+
+        /// <summary>
+        /// 将输入点上下折叠
+        /// </summary>
+        /// <param name="point">待折叠点</param>
+        /// <param name="centerZ">中心折线坐标点</param>
+        /// <returns></returns>
+        public static Vector3 FoldPointVertical(Vector3 point, float centerZ)
+        {
+            return point with { Z = 2 * centerZ - point.Z };
+        }
 
         /// <summary>
         /// 输入实体id，判断是否带有内场Buff，判断在内场
@@ -1748,7 +2041,12 @@ namespace KDrawScript.Dev
             /// <returns></returns>
             public string ShowPriorities(bool showJob = true)
             {
-                var str = $"{Annotation} 优先级字典：\n";
+                var str = $"{Annotation} ({ActionCount}-th) 优先级字典：\n";
+                if (Priorities.Count == 0)
+                {
+                    str += $"PriorityDict Empty.\n";
+                    return str;
+                }
                 foreach (var pair in Priorities)
                 {
                     str += $"Key {pair.Key} {(showJob ? $"({_role[pair.Key]})" : "")}, Value {pair.Value}\n";
@@ -1785,6 +2083,24 @@ namespace KDrawScript.Dev
             }
             sa.Log.Debug($"SetTargetable {targetable} => {obj.Name} {obj}");
         }
+        
+        /// <summary>
+        /// 输入坐标，获取逻辑方位（斜分割以正上为0，正分割以右上为0，顺时针增加）
+        /// </summary>
+        /// <param name="point">坐标点</param>
+        /// <param name="center">中心点</param>
+        /// <param name="dirs">方位总数</param>
+        /// <param name="diagDivision">斜分割，默认true</param>
+        /// <returns>该坐标点对应的逻辑方位</returns>
+        public static int Position2Dirs(Vector3 point, Vector3 center, int dirs, bool diagDivision = true)
+        {
+            double dirsDouble = dirs;
+            var r = diagDivision
+                ? Math.Round(dirsDouble / 2 - dirsDouble / 2 * Math.Atan2(point.X - center.X, point.Z - center.Z) / Math.PI) % dirsDouble
+                : Math.Floor(dirsDouble / 2 - dirsDouble / 2 * Math.Atan2(point.X - center.X, point.Z - center.Z) / Math.PI) % dirsDouble;
+            return (int)r;
+        }
+        
 
         // Courtesy of BMR
         public class Tiles
