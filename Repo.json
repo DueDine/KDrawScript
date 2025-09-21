@@ -10,14 +10,14 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M2.cs"
     },
     {
-        "Name": "AAC Cruiserweight M3",
-        "Guid": "E30016AA-1FD4-4E87-8152-15282D46B806",
-        "Version": "0.0.0.1",
+        "Name": "Jeuno The First Walk 朱诺：第一巡行",
+        "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
+        "Version": "0.0.0.7",
         "Author": "Due",
         "TerritoryIds": [
-            1260
+            1248
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
     },
     {
         "Name": "AAC Cruiserweight M1",
@@ -37,19 +37,17 @@
         "TerritoryIds": [
             1241
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs",
-        "Note": "当前不仅有基础绘制。以及 A/C 队 D2 - 4 指路 （即固定换到对方平台组）。\n内场组机制开发中。\n若发生问题请携ARR反馈。",
-        "UpdateInfo": "1. 加入了根据buff不可选中无法造成伤害的Boss的功能（外场坦克除外，保留挑衅大云救场的可能性）。\n2. 加入了内场种子弹指路。\n3. 加入了内场荆棘丛生拉线方向指引，及坦克待命位置。\n4. 内场组添加回旋式波动炮预占位与返回位指示。"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
     },
     {
-        "Name": "Jeuno The First Walk 朱诺：第一巡行",
-        "Guid": "5e7c9708-b36c-4b04-af16-43747b58b8ed",
-        "Version": "0.0.0.7",
+        "Name": "AAC Cruiserweight M3",
+        "Guid": "E30016AA-1FD4-4E87-8152-15282D46B806",
+        "Version": "0.0.0.1",
         "Author": "Due",
         "TerritoryIds": [
-            1248
+            1260
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/The_First_Walk.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
     },
     {
         "Name": "AAC Cruiserweight M4",
@@ -72,16 +70,6 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Endwalker/Abyssos_The_Eighth_Circle.cs"
     },
     {
-        "Name": "The Tower at Paradigm's Breach",
-        "Guid": "C5E49762-7E9A-4CCC-8842-1912842420F4",
-        "Version": "0.0.0.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            966
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Tower_at_Paradigm's_Breach.cs"
-    },
-    {
         "Name": "The Copied Factory",
         "Guid": "182DCBAA-AF3F-4576-BFA1-0F91CD3FEB04",
         "Version": "0.0.0.1",
@@ -92,14 +80,24 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Copied_Factory.cs"
     },
     {
-        "Name": "Alexander - The Fist of the Son (A5)",
-        "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
+        "Name": "The Tower at Paradigm's Breach",
+        "Guid": "C5E49762-7E9A-4CCC-8842-1912842420F4",
         "Version": "0.0.0.1",
         "Author": "Due",
         "TerritoryIds": [
-            520
+            966
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Shadowbringers/The_Tower_at_Paradigm's_Breach.cs"
+    },
+    {
+        "Name": "Alexander - The Cuff of the Son (A6)",
+        "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            521
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
     },
     {
         "Name": "Alexander - The Eyes of the Creator (A9)",
@@ -112,13 +110,13 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
     },
     {
-        "Name": "Alexander - The Cuff of the Son (A6)",
-        "Guid": "E6835ED0-D91C-4946-B07E-3634337311D7",
+        "Name": "Alexander - The Fist of the Son (A5)",
+        "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
         "Author": "Due",
         "TerritoryIds": [
-            521
+            520
         ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
     }
 ]
