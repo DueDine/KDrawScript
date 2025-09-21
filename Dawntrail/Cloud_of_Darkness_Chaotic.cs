@@ -1,6 +1,4 @@
 ﻿using Dalamud.Utility.Numerics;
-using ECommons;
-using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -14,7 +12,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Intrinsics.Arm;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -2304,5 +2301,13 @@ namespace KDrawScript.Dev
         }
 
         #endregion
+    }
+
+    public static class MathHelper
+    {
+        public static float DegToRad(this float val)
+        {
+            return (float)(MathF.PI / 180f * val);
+        }
     }
 }
