@@ -1,5 +1,35 @@
 [
     {
+        "Name": "Heavy Weight Savage",
+        "Guid": "A5689105-A7FD-4B84-9674-67610285768C",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1323
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/HeavyWeight.cs"
+    },
+    {
+        "Name": "CoD (Chaotic) 暗黑之云诛灭战",
+        "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
+        "Version": "0.0.2.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1241
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
+    },
+    {
+        "Name": "AAC Cruiserweight M4",
+        "Guid": "73D227EB-D2E2-40B6-8107-16E36A09FB8D",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1262
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M4.cs"
+    },
+    {
         "Name": "AAC Cruiserweight M2",
         "Guid": "1EF7A8D1-1D46-4E4A-9051-CC392724CA18",
         "Version": "0.0.0.1",
@@ -8,6 +38,16 @@
             1258
         ],
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M2.cs"
+    },
+    {
+        "Name": "AAC Cruiserweight M3",
+        "Guid": "E30016AA-1FD4-4E87-8152-15282D46B806",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            1260
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
     },
     {
         "Name": "Jeuno The First Walk 朱诺：第一巡行",
@@ -28,36 +68,6 @@
             1256
         ],
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M1.cs"
-    },
-    {
-        "Name": "CoD (Chaotic) 暗黑之云诛灭战",
-        "Guid": "436effd2-a350-4c67-b341-b4fe5a4ac233",
-        "Version": "0.0.2.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            1241
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/Cloud_of_Darkness_Chaotic.cs"
-    },
-    {
-        "Name": "AAC Cruiserweight M3",
-        "Guid": "E30016AA-1FD4-4E87-8152-15282D46B806",
-        "Version": "0.0.0.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            1260
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M3.cs"
-    },
-    {
-        "Name": "AAC Cruiserweight M4",
-        "Guid": "73D227EB-D2E2-40B6-8107-16E36A09FB8D",
-        "Version": "0.0.0.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            1262
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Dawntrail/AAC_Cruiserweight_M4.cs"
     },
     {
         "Name": "Abyssos The Eighth Circle (P8)",
@@ -100,16 +110,6 @@
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Cuff_of_the_Son.cs"
     },
     {
-        "Name": "Alexander - The Eyes of the Creator (A9)",
-        "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
-        "Version": "0.0.0.1",
-        "Author": "Due",
-        "TerritoryIds": [
-            580
-        ],
-        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
-    },
-    {
         "Name": "Alexander - The Fist of the Son (A5)",
         "Guid": "214e5774-a935-4b5f-858e-b9b7db00816d",
         "Version": "0.0.0.1",
@@ -118,5 +118,15 @@
             520
         ],
         "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Fist_of_the_Son.cs"
+    },
+    {
+        "Name": "Alexander - The Eyes of the Creator (A9)",
+        "Guid": "31204d48-0846-41fc-a389-20c8fb5327b1",
+        "Version": "0.0.0.1",
+        "Author": "Due",
+        "TerritoryIds": [
+            580
+        ],
+        "DownloadUrl": "https://raw.githubusercontent.com/DueDine/KDrawScript/main/Heavensward/The_Eyes_of_the_Creator.cs"
     }
 ]
