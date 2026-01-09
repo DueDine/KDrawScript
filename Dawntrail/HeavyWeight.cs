@@ -1,15 +1,21 @@
 ﻿using FFXIVClientStructs.FFXIV.Common.Math;
+using KodakkuAssist.Extensions;
 using KodakkuAssist.Module.Draw;
 using KodakkuAssist.Module.GameEvent;
 using KodakkuAssist.Script;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
 
 namespace KDrawScript.Dev
 {
     [ScriptType(name: "Heavy Weight Savage", territorys: [1323], guid: "A5689105-A7FD-4B84-9674-67610285768C", version: "0.0.0.1", author: "Due")]
     public class HeavyWeightSavage
     {
+
+        [UserSetting(note: "实验性开关。")]
+        public bool EnableGuidance { get; set; } = false;
+
         public void Init(ScriptAccessory accessory)
         {
             accessory.Method.RemoveDraw(".*");
@@ -79,6 +85,66 @@ namespace KDrawScript.Dev
             dp.CentreOrderIndex = 1;
 
             accessory.Method.SendDraw(DrawModeEnum.Default, DrawTypeEnum.Circle, dp);
+        }
+
+        // 4 Fire 5 Water
+        [ScriptMethod(name: "Firesnaking & Watersnaking", eventType: EventTypeEnum.StatusAdd, eventCondition: ["StatusID:regex:^(497[45])$"])]
+        public void FiresnakingWatersnaking(Event @event, ScriptAccessory accessory)
+        {
+            if (!EnableGuidance) return;
+            if (!ParseObjectId(@event["TargetId"], out var tid)) return;
+            if (accessory.Data.Me != tid) return;
+
+            var StatusID = @event.StatusId;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Firesnaking & Watersnaking";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Scale = new(2);
+            dp.Owner = accessory.Data.Me;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.DestoryAt = 7000;
+
+            if (StatusID == 4975)
+                dp.TargetObject = accessory.Data.Objects.GetByDataId(19288).FirstOrDefault().EntityId;
+            else
+                dp.TargetPosition = new Vector3(118.50f, 0, 88.50f);
+
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
+        }
+
+        [ScriptMethod(name: "Deep Varial", eventType: EventTypeEnum.StartCasting, eventCondition: ["ActionId:46547"])]
+        public void DeepVarial(Event @event, ScriptAccessory accessory)
+        {
+            if (!ParseObjectId(@event["SourceId"], out _)) return;
+            
+            var pos = @event.SourcePosition;
+
+            var dp = accessory.Data.GetDefaultDrawProperties();
+            dp.Name = "Deep Varial";
+            dp.Color = accessory.Data.DefaultSafeColor;
+            dp.Scale = new(2);
+            dp.Owner = accessory.Data.Me;
+            dp.ScaleMode |= ScaleMode.YByDistance;
+            dp.DestoryAt = 6000;
+
+            if (accessory.Data.MyObject.HasStatus(4975))
+            {
+                if (pos.Z == 120)
+                    dp.TargetPosition = new Vector3(84.60f, 0, 112.39f);
+                else if (pos.Z == 80)
+                    dp.TargetPosition = new Vector3(84.60f, 0, 87.5f);
+
+            }
+            else if (accessory.Data.MyObject.HasStatus(4974))
+            {
+                if (pos.Z == 120)
+                    dp.TargetPosition = new Vector3(115.16f, 0, 118.83f);
+                else if (pos.Z == 80)
+                    dp.TargetPosition = new Vector3(112.27f, 0, 82.00f);
+            }
+
+            accessory.Method.SendDraw(DrawModeEnum.Imgui, DrawTypeEnum.Displacement, dp);
         }
 
         #region Utility
